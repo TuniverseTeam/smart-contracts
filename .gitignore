@@ -17,7 +17,6 @@ npm-debug.log
 .vagrant/**
 blockchain/geth/**
 blockchain/keystore/**
-blockchain/history
 
 #truffle
 .tern-port
