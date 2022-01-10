@@ -2,10 +2,11 @@
 
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Context.sol";
+import "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
-contract PermissionGroup is Ownable {
+contract PermissionGroup is OwnableUpgradeable {
     // List of authorized address to perform some restricted actions
     mapping(address => bool) public operators;
 

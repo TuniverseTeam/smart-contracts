@@ -15,7 +15,7 @@
 ### verify
 
 ```
-  truffle run verify WastedWarrior@{contract-address} --network testnet
+  truffle run verify Tuniverse@{contract-address} --network testnet
 ```
 
 ### migrate
@@ -29,6 +29,5 @@
 ```
 ### migrate specific file 
 ```
-  truffle migrate -f 3 --to 3 --network testnet
+  truffle migrate -f 1 --to 1 --network testnet
 ```
-

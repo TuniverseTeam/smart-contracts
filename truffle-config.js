@@ -63,14 +63,12 @@
      },
  
      bsc: {
-       provider: () => {
-         return new HDWalletProvider(process.env.PRIVATE_KEY, "https://bsc-dataseed2.binance.org")
-       },
+       provider: () => new HDWalletProvider(process.env.PRIVATE_KEY, `https://bsc-dataseed1.binance.org`),
        network_id: 56,
-       skipDryRun: true,
-       gasPrice: 10 * 1e9,
-       timeoutBlocks: 1,
-       confirmations: 0,
+       from: process.env.PUBLIC_KEY,
+       confirmations: 10,
+       timeoutBlocks: 200,
+       skipDryRun: true
      },
      // Another network with more advanced options...
      // advanced: {
@@ -139,4 +137,3 @@
      // }
    // }
  };
- 
