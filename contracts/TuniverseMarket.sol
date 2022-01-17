@@ -53,7 +53,7 @@ contract TuniverseMarket is
         uint256 price,
         uint256 amount
     ) external nonReentrant {
-        require(price > 0, "WAW: invalid price");
+        require(price > 0, "Tuniverse: invalid price");
 
         tuniverseContract.safeTransferFrom(
             msg.sender,

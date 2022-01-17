@@ -12,6 +12,12 @@ interface ITuniverse {
         MYTHICAL
     }
 
+    struct Artist {
+        uint256 total;
+        uint256 created;
+        uint256 endTime;
+    }
+
     struct Song {
         string name;
         uint16 maxSupply;
@@ -19,7 +25,8 @@ interface ITuniverse {
         uint16 minted;
         uint16 burnt;
         Rarity rarity;
-        address singer;
+        address artist;
+        bytes32 songHash;
     }
 
     event SongCreated(
@@ -38,6 +45,7 @@ interface ITuniverse {
         string memory name,
         uint16 maxSupply,
         uint16 royalShare,
+        bytes32 songHash,
         Rarity rarity
     ) external payable;
 
@@ -66,9 +74,4 @@ interface ITuniverse {
         external
         view
         returns (bool);
-
-    /**
-     * @notice Check if song is blacklisted.
-     */
-    function isBlacklisted(uint256 songId) external view returns (bool);
 }
