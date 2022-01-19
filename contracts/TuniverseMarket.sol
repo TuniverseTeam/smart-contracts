@@ -29,7 +29,7 @@ contract TuniverseMarket is
     bytes32 public SINGER_ROLE;
     bytes32 public CONTROLLER_ROLE;
 
-    ITuniverse public tuniverseContract;
+    ITuniverseOperator public tuniverseContract;
 
     uint256 public marketFeeInPercent;
     uint256 public serviceFeeInToken;
@@ -39,7 +39,7 @@ contract TuniverseMarket is
     mapping(address => EnumerableSet.UintSet) private balancesOf;
 
     function initialize(
-        ITuniverse tuniverse_,
+        ITuniverseOperator tuniverse_,
         uint256 marketFeeInPercent_,
         uint256 serviceFeeInToken_
     ) public initializer {

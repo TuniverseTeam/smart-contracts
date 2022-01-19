@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC1155/IERC1155Upgradeable.sol";
 
-interface ITuniverse is IERC1155Upgradeable {
+interface ITuniverseOperator is IERC1155Upgradeable {
     enum Rarity {
         COMMON,
         UNCOMMON,

@@ -19,33 +19,24 @@ contract Tuniverse is
     using AddressUpgradeable for address;
     using SafeMathUpgradeable for uint256;
 
-    modifier onlyArtist(address _artistAddress) {
-        require(
-            _artist[_artistAddress].total > 0,
-            "Tuniverse: invalid address"
-        );
-        require(
-            _artist[_artistAddress].created <= _artist[_artistAddress].total,
-            "Tuniverse: not eligible"
-        );
-        require(
-            _artist[_artistAddress].endTime <= block.timestamp,
-            "Tuniverse: not valid time"
-        );
-        _;
-    }
-
     modifier onlyArtistOfSong(address _artistAddress, uint256 songId) {
-        require(_songs[songId].artist == _artistAddress);
+        require(
+            hasRole(ARTIST_ROLE, _artistAddress),
+            "Tuniverse: unauthorized"
+        );
+        require(
+            _songs[songId].artist == _artistAddress,
+            "Tuniverse: caller is not owner of this song"
+        );
         _;
     }
 
-    mapping(address => Artist) public _artist;
     Song[] private _songs;
     uint256 public feeCreateSong;
     bytes32 public SIGNER_ROLE;
     bytes32 public CONTROLLER_ROLE;
     bytes32 public OPERATOR_ROLE;
+    bytes32 public ARTIST_ROLE;
 
     function initialize(string memory _uri, uint256 _feeCreateSong)
         public
@@ -57,6 +48,7 @@ contract Tuniverse is
         SIGNER_ROLE = keccak256("SIGNER_ROLE");
         CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
         OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+        ARTIST_ROLE = keccak256("ARTIST_ROLE");
     }
 
     function verifySignature(bytes memory _signedSongHash, uint256 songId)
@@ -79,41 +71,19 @@ contract Tuniverse is
         feeCreateSong = _feeCreateSong;
     }
 
-    function addArtist(
-        address artistAddress,
-        uint256 total,
-        uint256 endTime
-    ) external onlyOwner {
-        require(endTime > block.timestamp && total > 0, "Tuniverse: invalid");
-        _artist[artistAddress] = Artist(total, 0, endTime);
-    }
-
     function createSong(
         string memory name,
         uint16 maxSupply,
-        uint16 royalShare,
         bytes32 songHash,
         Rarity rarity
-    ) external payable override onlyArtist(msg.sender) {
+    ) external payable override {
+        require(hasRole(ARTIST_ROLE, msg.sender), "Tuniverse: unauthorized");
         require(maxSupply > 0, "Tuniverse: invalid maxSupply");
         require(msg.value == feeCreateSong, "Tuniverse: Not enough fee");
 
-        _songs.push(
-            Song(
-                name,
-                maxSupply,
-                royalShare,
-                0,
-                0,
-                rarity,
-                msg.sender,
-                songHash
-            )
-        );
+        _songs.push(Song(name, maxSupply, 0, 0, rarity, msg.sender, songHash));
         uint256 songId = _songs.length.sub(1);
         _mint(msg.sender, songId, maxSupply, "");
-
-        _artist[msg.sender].created = _artist[msg.sender].created.add(1);
 
         (bool isTransferToOwner, ) = owner().call{value: msg.value}("");
         require(isTransferToOwner);
@@ -210,7 +180,7 @@ contract Tuniverse is
         uint256 amount,
         bytes memory data
     ) external onlyRole(OPERATOR_ROLE) {
-        require(from != address(0), "invalid address");
+        require(from != address(0), "Tuniverse: invalid address");
         _safeTransferFrom(from, to, id, amount, data);
     }
 

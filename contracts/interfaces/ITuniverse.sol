@@ -12,16 +12,9 @@ interface ITuniverse {
         MYTHICAL
     }
 
-    struct Artist {
-        uint256 total;
-        uint256 created;
-        uint256 endTime;
-    }
-
     struct Song {
         string name;
         uint16 maxSupply;
-        uint16 royalShare;
         uint16 minted;
         uint16 burnt;
         Rarity rarity;
@@ -44,21 +37,20 @@ interface ITuniverse {
     function createSong(
         string memory name,
         uint16 maxSupply,
-        uint16 royalShare,
         bytes32 songHash,
         Rarity rarity
     ) external payable;
 
     /**
      * @notice Burns ERC1155 songs since it is locked to staking.
-     * @dev prefunc for staking.
+     *
      */
     function putSongsIntoStorage(address account, uint256[] memory songIds)
         external;
 
     /**
      * @notice Returns ERC1155 songs back to the owner.
-     * @dev prefunc for staking.
+     *
      */
     function returnSongs(address account, uint256[] memory songIds) external;
 
