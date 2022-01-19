@@ -141,6 +141,15 @@ contract Tuniverse is
         return _songs[songId];
     }
 
+    function isArtistOfSong(uint256 songId, address _artistAddress)
+        external
+        view
+        override
+        returns (bool)
+    {
+        return _songs[songId].artist == _artistAddress;
+    }
+
     function isOutOfStock(uint256 songId, uint16 amount)
         external
         view

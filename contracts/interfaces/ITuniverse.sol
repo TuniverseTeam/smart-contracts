@@ -60,6 +60,15 @@ interface ITuniverse {
     function getSong(uint256 songId) external view returns (Song memory song);
 
     /**
+     * @notice Check artist of specific song.
+     * @dev prefunc for marketplace
+     */
+    function isArtistOfSong(uint256 songId, address _artistAddress)
+        external
+        view
+        returns (bool);
+
+    /**
      * @notice Check if song is out of stock.
      */
     function isOutOfStock(uint256 songId, uint16 amount)
