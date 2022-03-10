@@ -120,7 +120,7 @@ contract TuniverNFT is
         uint256 tokenId
     ) internal override {
         require(!paused, "TNV: paused");
-        require(blacklist[tokenId], "TNV: tuniverId blacklisted");
+        require(!blacklist[tokenId], "TNV: tuniverId blacklisted");
     }
 
     function safeBatchTransfer(
