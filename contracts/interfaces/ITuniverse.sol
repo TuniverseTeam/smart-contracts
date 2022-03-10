@@ -1,78 +1,54 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.7;
 
-interface ITuniverse {
-    enum Rarity {
-        COMMON,
-        UNCOMMON,
-        RARE,
-        EPIC,
-        LEGENDARY,
-        MYTHICAL
-    }
-
-    struct Song {
-        string name;
-        uint16 maxSupply;
-        uint16 minted;
-        uint16 burnt;
-        Rarity rarity;
-        address artist;
-        bytes32 songHash;
-    }
-
-    event SongCreated(
-        uint256 indexed songId,
-        string name,
-        uint16 maxSupply,
-        Rarity rarity
+interface ITuniver {
+    event TuniverCreated(
+        uint256 collectionType,
+        uint256 nftType,
+        uint256[] extraRewards,
+        uint256 royaltyShare
     );
-    event SongLocked(uint256[] indexed songIds, bool isLocked);
-    event SongBlacklisted(uint256 indexed songIds, bool isBlacklisted);
+    event AddTuniverToBlacklist(uint256 tuniverId);
+    event RemoveTuniverFromBlacklist(uint256 tuniverId);
+
+    struct Tuniver {
+        uint256 collectionType;
+        uint256 nftType;
+        uint256[] extraRewards;
+        uint256 royaltyShare;
+    }
 
     /**
-     * @notice Create a song.
-     */
-    function createSong(
-        string memory name,
-        uint16 maxSupply,
-        bytes32 songHash,
-        Rarity rarity
-    ) external payable;
-
-    /**
-     * @notice Burns ERC1155 songs since it is locked to staking.
+     * @notice Gets tuniver information.
      *
+     * @dev Prep function for staking.
      */
-    function putSongsIntoStorage(address account, uint256[] memory songIds)
-        external;
+    function getTuniver(uint256 tuniverId)
+        external
+        view
+        returns (
+            uint256 collectionType,
+            uint256 nftType,
+            uint256[] memory extraRewards,
+            uint256 royaltyShare
+        );
 
     /**
-     * @notice Returns ERC1155 songs back to the owner.
-     *
+     * @notice tuniver blacklisted.
      */
-    function returnSongs(address account, uint256[] memory songIds) external;
-
-    /**
-     * @notice Gets song information.
-     */
-    function getSong(uint256 songId) external view returns (Song memory song);
-
-    /**
-     * @notice Check artist of specific song.
-     * @dev prefunc for marketplace
-     */
-    function isArtistOfSong(uint256 songId, address _artistAddress)
+    function getTuniverInBlacklist(uint256 tuniverId)
         external
         view
         returns (bool);
 
     /**
-     * @notice Check if song is out of stock.
+     * @notice mint tuniver for specific address.
+     *
+     * @dev Function take 3 arguments are address of buyer, amount.
+     *
+     * Requirements:
+     * - onlyOperator
      */
-    function isOutOfStock(uint256 songId, uint16 amount)
-        external
-        view
-        returns (bool);
+    function mintFor(address buyer, Tuniver[] memory tunivers) external;
 }
