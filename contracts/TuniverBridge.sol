@@ -23,6 +23,9 @@ contract TuniverBridge is
     uint256 public swapFee;
     bool public paused;
 
+    mapping(uint256 => uint256) public tuniverIdToCollab;
+    mapping(uint256 => uint256) public collabIdToTuniver;
+
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
 
@@ -40,6 +43,14 @@ contract TuniverBridge is
         collabContract = _collabContract;
         swapFee = _swapFee;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    }
+
+    function setTokenMapping(uint256 tuniverId, uint256 collabId)
+        external
+        onlyOwner
+    {
+        tuniverIdToCollab[tuniverId] = collabId;
+        collabIdToTuniver[collabId] = tuniverId;
     }
 
     function setTuniverContract(IERC721 _tuniverContract) external onlyOwner {
@@ -65,11 +76,13 @@ contract TuniverBridge is
         require(msg.value == swapFee, "TuniverBridge: invalid fee");
 
         if (_isSwapIn) {
-            uint256 tuniverId = _calculateTuniverID(tokenId);
+            uint256 tuniverId = collabIdToTuniver[tokenId];
+            require(tuniverId != 0, "TuniverBridge: not supported");
             collabContract.safeTransferFrom(msg.sender, address(this), tokenId);
             tuniverContract.transferFrom(address(this), msg.sender, tuniverId);
         } else {
-            uint256 collabId = _calculateCollabID(tokenId);
+            uint256 collabId = tuniverIdToCollab[tokenId];
+            require(collabId != 0, "TuniverBridge: not supported");
             tuniverContract.safeTransferFrom(
                 msg.sender,
                 address(this),

@@ -41,7 +41,7 @@ contract TuniverNFT is
         external
         onlyRole(CONTROLLER_ROLE)
     {
-        require(tuniverId < _tunivers.length, "WAW: invalid");
+        require(tuniverId <= _tunivers.length, "WAW: invalid");
         blacklist[tuniverId] = true;
         emit AddTuniverToBlacklist(tuniverId);
     }
@@ -50,7 +50,7 @@ contract TuniverNFT is
         external
         onlyRole(CONTROLLER_ROLE)
     {
-        require(tuniverId < _tunivers.length);
+        require(tuniverId <= _tunivers.length);
         blacklist[tuniverId] = false;
         emit RemoveTuniverFromBlacklist(tuniverId);
     }
@@ -84,7 +84,7 @@ contract TuniverNFT is
             uint256 royaltyShare
         )
     {
-        Tuniver memory tuniver = _tunivers[tuniverId];
+        Tuniver memory tuniver = _tunivers[tuniverId.sub(1)];
 
         collectionType = tuniver.collectionType;
         nftType = tuniver.nftType;
@@ -105,7 +105,7 @@ contract TuniverNFT is
         _tunivers.push(
             Tuniver(collectionType, nftType, extraRewards, royaltyShare)
         );
-        tuniverId = _tunivers.length.sub(1);
+        tuniverId = _tunivers.length;
 
         emit TuniverCreated(
             collectionType,
