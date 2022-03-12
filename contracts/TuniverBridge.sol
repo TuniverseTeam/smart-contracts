@@ -47,21 +47,27 @@ contract TuniverBridge is
 
     function setTokenMapping(uint256 tuniverId, uint256 collabId)
         external
-        onlyOwner
+        onlyRole(CONTROLLER_ROLE)
     {
         tuniverIdToCollab[tuniverId] = collabId;
         collabIdToTuniver[collabId] = tuniverId;
     }
 
-    function setTuniverContract(IERC721 _tuniverContract) external onlyOwner {
+    function setTuniverContract(IERC721 _tuniverContract)
+        external
+        onlyRole(CONTROLLER_ROLE)
+    {
         tuniverContract = _tuniverContract;
     }
 
-    function setCollabContract(IERC721 _collabContract) external onlyOwner {
+    function setCollabContract(IERC721 _collabContract)
+        external
+        onlyRole(CONTROLLER_ROLE)
+    {
         collabContract = _collabContract;
     }
 
-    function togglePaused() external onlyOwner {
+    function togglePaused() external onlyRole(CONTROLLER_ROLE) {
         paused = !paused;
         emit Paused(paused);
     }
