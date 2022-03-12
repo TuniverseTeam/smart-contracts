@@ -103,24 +103,6 @@ contract TuniverBridge is
         emit SwapTo(msg.sender, to, amount, tokenId);
     }
 
-    function _calculateTuniverID(uint256 tokenId)
-        private
-        pure
-        returns (uint256)
-    {
-        // coming
-        return tokenId;
-    }
-
-    function _calculateCollabID(uint256 tokenId)
-        private
-        pure
-        returns (uint256)
-    {
-        // coming
-        return tokenId;
-    }
-
     function withdrawNFT(
         IERC721 token,
         address to,
