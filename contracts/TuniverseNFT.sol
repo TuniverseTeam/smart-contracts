@@ -31,6 +31,7 @@ contract TuniverNFT is
         __ERC721_init_unchained("TuniverNFT", "TNV");
         __AccessControl_init();
         __ReentrancyGuard_init_unchained();
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
         OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
         _uri = baseURI;
@@ -131,6 +132,10 @@ contract TuniverNFT is
         for (uint256 i = 0; i < tokenIds.length; i++) {
             safeTransferFrom(from, to, tokenIds[i]);
         }
+    }
+
+    function totalSupply() public view override returns (uint256) {
+        return _tunivers.length;
     }
 
     function mintFor(address buyer, Tuniver[] memory tunivers)
