@@ -8,11 +8,13 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./utils/TokenWithdrawableBridge.sol";
 
-contract BridgeWALETH is
+contract TuniverBridge is
     AccessControl,
     ReentrancyGuard,
+    IERC721Receiver,
     Ownable,
     TokenWithdrawableBridge
 {
@@ -56,13 +58,25 @@ contract BridgeWALETH is
     function swap(
         uint256 tokenId,
         address to,
-        uint256 amount
+        uint256 amount,
+        bool _isSwapIn
     ) external payable nonReentrant {
         require(!paused, "TuniverBridge: paused");
         require(msg.value == swapFee, "TuniverBridge: invalid fee");
 
-        collabContract.safeTransferFrom(msg.sender, address(this), tokenId);
-        tuniverContract.transferFrom(address(this), msg.sender, tokenId);
+        if (_isSwapIn) {
+            uint256 tuniverId = _calculateTuniverID(tokenId);
+            collabContract.safeTransferFrom(msg.sender, address(this), tokenId);
+            tuniverContract.transferFrom(address(this), msg.sender, tuniverId);
+        } else {
+            uint256 collabId = _calculateCollabID(tokenId);
+            tuniverContract.safeTransferFrom(
+                msg.sender,
+                address(this),
+                tokenId
+            );
+            collabContract.transferFrom(address(this), msg.sender, collabId);
+        }
 
         (bool isTransferToOwner, ) = owner().call{value: msg.value}("");
         require(isTransferToOwner);
@@ -70,11 +84,29 @@ contract BridgeWALETH is
         emit SwapTo(msg.sender, to, amount, tokenId);
     }
 
+    function _calculateTuniverID(uint256 tokenId)
+        private
+        pure
+        returns (uint256)
+    {
+        // coming
+        return tokenId;
+    }
+
+    function _calculateCollabID(uint256 tokenId)
+        private
+        pure
+        returns (uint256)
+    {
+        // coming
+        return tokenId;
+    }
+
     function withdrawNFT(
         IERC721 token,
         address to,
         uint256 tokenId
-    ) external onlyOwner {
+    ) external onlyRole(CONTROLLER_ROLE) {
         token.transferFrom(address(this), to, tokenId);
     }
 
@@ -83,5 +115,17 @@ contract BridgeWALETH is
         swapFee = _swapFee;
 
         emit SwapFeeUpdated(_swapFee);
+    }
+
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external override returns (bytes4) {
+        return
+            bytes4(
+                keccak256("onERC721Received(address,address,uint256,bytes)")
+            );
     }
 }
