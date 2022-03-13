@@ -45,12 +45,18 @@ contract TuniverBridge is
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
 
-    function setTokenMapping(uint256 tuniverId, uint256 collabId)
-        external
-        onlyRole(CONTROLLER_ROLE)
-    {
-        tuniverIdToCollab[tuniverId] = collabId;
-        collabIdToTuniver[collabId] = tuniverId;
+    function setTokenMapping(
+        uint256[] memory tuniverIds,
+        uint256[] memory collabIds
+    ) external onlyRole(CONTROLLER_ROLE) {
+        require(
+            tuniverIds.length == collabIds.length,
+            "TunvierBridge: invalid data"
+        );
+        for (uint256 i = 0; i < tuniverIds.length; i++) {
+            tuniverIdToCollab[tuniverIds[i]] = collabIds[i];
+            collabIdToTuniver[collabIds[i]] = tuniverIds[i];
+        }
     }
 
     function setTuniverContract(IERC721 _tuniverContract)
