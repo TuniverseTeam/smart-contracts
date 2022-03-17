@@ -6,7 +6,6 @@ interface ITuniver {
     event TuniverCreated(
         uint256 collectionType,
         uint256 nftType,
-        uint256[] extraRewards,
         uint256 royaltyShare
     );
     event AddTuniverToBlacklist(uint256 tuniverId);
@@ -15,7 +14,6 @@ interface ITuniver {
     struct Tuniver {
         uint256 collectionType;
         uint256 nftType;
-        uint256[] extraRewards;
         uint256 royaltyShare;
     }
 
@@ -51,4 +49,17 @@ interface ITuniver {
      * - onlyOperator
      */
     function mintFor(address buyer, Tuniver[] memory tunivers) external;
+
+    /**
+     * @notice fusion 2 tuniver.
+     *
+     * @dev Prep function for fusion.
+     */
+    function fusion(
+        uint256[] memory tuniverIds,
+        uint256 collectionType,
+        uint256 nftType,
+        uint256 royaltyShare,
+        address caller
+    ) external;
 }

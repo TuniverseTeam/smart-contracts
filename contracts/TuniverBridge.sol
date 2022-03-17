@@ -29,9 +29,8 @@ contract TuniverBridge is
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
 
-    event SwapTo(address from, address to, uint256 amount, uint256 tokenId);
+    event SwapTo(address from, address to, uint256 tokenId);
     event SwapFeeUpdated(uint256 _swapFee);
-    event MintFor(address to, uint256 amount);
     event Paused(bool isPaused);
 
     constructor(
@@ -81,7 +80,6 @@ contract TuniverBridge is
     function swap(
         uint256 tokenId,
         address to,
-        uint256 amount,
         bool _isSwapIn
     ) external payable nonReentrant {
         require(!paused, "TuniverBridge: paused");
@@ -106,7 +104,7 @@ contract TuniverBridge is
         (bool isTransferToOwner, ) = owner().call{value: msg.value}("");
         require(isTransferToOwner);
 
-        emit SwapTo(msg.sender, to, amount, tokenId);
+        emit SwapTo(msg.sender, to, tokenId);
     }
 
     function withdrawNFT(

@@ -41,7 +41,7 @@ contract TuniverNFT is
         external
         onlyRole(CONTROLLER_ROLE)
     {
-        require(tuniverId <= _tunivers.length, "WAW: invalid");
+        require(tuniverId <= _tunivers.length, "TNV: invalid");
         blacklist[tuniverId] = true;
         emit AddTuniverToBlacklist(tuniverId);
     }
@@ -88,7 +88,6 @@ contract TuniverNFT is
 
         collectionType = tuniver.collectionType;
         nftType = tuniver.nftType;
-        extraRewards = tuniver.extraRewards;
         royaltyShare = tuniver.royaltyShare;
     }
 
@@ -99,20 +98,12 @@ contract TuniverNFT is
     function _createTuniver(
         uint256 collectionType,
         uint256 nftType,
-        uint256[] memory extraRewards,
         uint256 royaltyShare
     ) private returns (uint256 tuniverId) {
-        _tunivers.push(
-            Tuniver(collectionType, nftType, extraRewards, royaltyShare)
-        );
+        _tunivers.push(Tuniver(collectionType, nftType, royaltyShare));
         tuniverId = _tunivers.length;
 
-        emit TuniverCreated(
-            collectionType,
-            nftType,
-            extraRewards,
-            royaltyShare
-        );
+        emit TuniverCreated(collectionType, nftType, royaltyShare);
     }
 
     function _beforeTokenTransfer(
@@ -148,11 +139,30 @@ contract TuniverNFT is
             uint256 tuniverId = _createTuniver(
                 tunivers[i].collectionType,
                 tunivers[i].nftType,
-                tunivers[i].extraRewards,
                 tunivers[i].royaltyShare
             );
             _safeMint(buyer, tuniverId);
         }
+    }
+
+    function fusion(
+        uint256[] memory tuniverIds,
+        uint256 collectionType,
+        uint256 nftType,
+        uint256 royaltyShare,
+        address caller
+    ) external onlyRole(OPERATOR_ROLE) {
+        require(tuniverIds.length == 2, "TNV: invalid tuniverId");
+        for (uint256 i = 0; i < tuniverIds.length; i = i.add(1)) {
+            require(tuniverIds[i] <= _tunivers.length, "TNV: invalid Id");
+            _burn(tuniverIds[i]);
+        }
+        uint256 tuniverId = _createTuniver(
+            collectionType,
+            nftType,
+            royaltyShare
+        );
+        _safeMint(caller, tuniverId);
     }
 
     function supportsInterface(bytes4 interfaceId)
