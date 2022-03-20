@@ -1,207 +1,189 @@
-//coming soon.
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC1155/utils/ERC1155HolderUpgradeable.sol";
-import "./interfaces/ITuniverseCollab.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./utils/AcceptedToken.sol";
+import "./interfaces/ITuniverseCollab.sol";
 
-contract TuniverseMarket is
+contract TuniverMarket is
+    ReentrancyGuard,
+    Ownable,
     AcceptedToken,
-    ReentrancyGuardUpgradeable,
-    AccessControlUpgradeable,
-    ERC1155HolderUpgradeable
+    IERC721Receiver
 {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
-    using SafeMathUpgradeable for uint256;
-    using EnumerableSet for EnumerableSet.UintSet;
+    using SafeMath for uint256;
 
-    struct BuyInfo {
-        uint256 amount;
-        uint256 price;
+    modifier onlyTuniverOwner(uint256 tuniverId, address caller) {
+        ownerOf[tuniverId] = caller;
+        _;
     }
 
-    uint256 public PERCENT;
-    bytes32 public SINGER_ROLE;
-    bytes32 public CONTROLLER_ROLE;
+    event TuniverOfferCanceled(uint256 indexed tuniverId, address buyer);
+    event TuniverListed(uint256 tuniverId, uint256 price, address seller);
+    event TuniverDelisted(uint256 indexed tunvierId);
+    event TuniverBought(
+        uint256 indexed tunvierId,
+        address buyer,
+        address seller,
+        uint256 price
+    );
+    event TuniverOffered(
+        uint256 indexed tunvierId,
+        address buyer,
+        uint256 price
+    );
 
-    ITuniverseOperator public tuniverseContract;
+    ITuniver public tuniverContract;
 
-    uint256 public marketFeeInPercent;
-    uint256 public serviceFeeInToken;
-    mapping(address => mapping(uint256 => BuyInfo)) public songsOnSale;
-    mapping(address => mapping(uint256 => mapping(address => BuyInfo)))
-        public songsOffers;
-    mapping(address => EnumerableSet.UintSet) private balancesOf;
+    bool public paused;
+    uint256 marketFeeInPercent;
+    uint256 constant PERCENT = 100;
+    mapping(uint256 => uint256) public tuniversOnSale;
+    mapping(uint256 => mapping(address => uint256)) public tuniversOffers;
+    mapping(uint256 => address) public ownerOf;
 
-    function initialize(
-        ITuniverseOperator tuniverse_,
-        uint256 marketFeeInPercent_,
-        uint256 serviceFeeInToken_
-    ) public initializer {
-        marketFeeInPercent = marketFeeInPercent_;
-        serviceFeeInToken = serviceFeeInToken_;
-        tuniverseContract = tuniverse_;
+    constructor(ITuniver _tuniverContract, IERC20 _acceptedToken)
+        AcceptedToken(_acceptedToken)
+    {
+        tuniverContract = _tuniverContract;
     }
 
-    function listing(
-        uint256 songId,
-        uint256 price,
-        uint256 amount
-    ) external nonReentrant {
-        require(price > 0, "Tuniverse: invalid price");
+    function listing(uint256 tuniverId, uint256 price) external {
+        require(!paused);
+        require(price > 0);
 
-        tuniverseContract.safeTransferFrom(
-            msg.sender,
-            address(this),
-            songId,
-            amount,
-            ""
-        );
+        tuniverContract.safeTransferFrom(msg.sender, address(this), tuniverId);
 
-        songsOnSale[msg.sender][songId].price = price;
-        songsOnSale[msg.sender][songId].amount = songsOnSale[msg.sender][songId]
-            .amount
-            .add(amount);
-        balancesOf[msg.sender].add(songId);
+        tuniversOnSale[tuniverId] = price;
+        ownerOf[tuniverId] = msg.sender;
+
+        emit TuniverListed(tuniverId, price, msg.sender);
     }
 
-    function delist(uint256 songId) external nonReentrant {
-        uint256 amount = songsOnSale[msg.sender][songId].amount;
+    function delist(uint256 tuniverId)
+        external
+        onlyTuniverOwner(tuniverId, msg.sender)
+    {
+        require(!paused, "TNM: paused");
+        require(tuniversOnSale[tuniverId] > 0);
 
-        songsOnSale[msg.sender][songId].price = 0;
-        songsOnSale[msg.sender][songId].amount = 0;
+        tuniversOnSale[tuniverId] = 0;
+        tuniverContract.transferFrom(address(this), msg.sender, tuniverId);
 
-        tuniverseContract.transferFrom(
-            address(this),
-            msg.sender,
-            songId,
-            amount,
-            ""
-        );
-        balancesOf[msg.sender].remove(songId);
+        emit TuniverDelisted(tuniverId);
     }
 
     function buy(
-        uint256 songId,
-        address seller,
-        uint256 amount,
-        uint256 expectedPrice
+        uint256 tuniverId,
+        uint256 expectedPrice,
+        address buyer
     ) external payable nonReentrant {
-        uint256 price = songsOnSale[seller][songId].price * amount;
-        address buyer = msg.sender;
+        uint256 price = tuniversOnSale[tuniverId];
+        address seller = ownerOf[tuniverId];
 
+        require(!paused, "TNM: paused");
         require(buyer != seller);
-        require(price > 0, "Tunniverse: not on sale");
         require(price == expectedPrice);
-        require(msg.value == price, "Tuniverse: not enough");
+        require(price > 0, "TNM: not sale");
 
-        _makeTransaction(songId, buyer, seller, price, amount);
+        _makeTransaction(tuniverId, buyer, seller, price);
+
+        emit TuniverBought(tuniverId, buyer, seller, price);
     }
 
-    function offer(
-        uint256 songId,
-        uint256 offerPrice,
-        address seller,
-        uint256 amount
-    ) external payable nonReentrant {
+    function offer(uint256 tuniverId, uint256 offerPrice)
+        external
+        payable
+        nonReentrant
+    {
+        require(!paused);
         address buyer = msg.sender;
-        uint256 currentOffer = songsOffers[seller][songId][buyer].price;
+        uint256 currentOffer = tuniversOffers[tuniverId][buyer];
         bool needRefund = offerPrice < currentOffer;
         uint256 requiredValue = needRefund ? 0 : offerPrice - currentOffer;
 
-        require(buyer != seller, "Tuniverse: cannot offer");
-        require(offerPrice != currentOffer, "Tuniverse: same offer");
-        require(msg.value == requiredValue, "Tuniverse: value invalid");
+        require(buyer != ownerOf[tuniverId]);
+        require(offerPrice != currentOffer);
+        require(msg.value == requiredValue);
 
-        songsOffers[seller][songId][buyer].price = offerPrice;
-        songsOffers[seller][songId][buyer].amount = amount;
+        tuniversOffers[tuniverId][buyer] = offerPrice;
 
         if (needRefund) {
             uint256 returnedValue = currentOffer - offerPrice;
 
-            (bool success, ) = buyer.call{value: returnedValue}("");
-            require(success);
+            collectToken(address(this), buyer, returnedValue);
+            // (bool success, ) = buyer.call{value: returnedValue}("");
+            // require(success);
         }
+
+        emit TuniverOffered(tuniverId, buyer, offerPrice);
     }
 
     function acceptOffer(
-        uint256 songId,
+        uint256 tuniverId,
         address buyer,
         uint256 expectedPrice
-    ) external nonReentrant {
+    ) external nonReentrant onlyTuniverOwner(tuniverId, msg.sender) {
+        require(!paused);
+        uint256 offeredPrice = tuniversOffers[tuniverId][buyer];
         address seller = msg.sender;
-        uint256 offeredPrice = songsOffers[seller][songId][buyer].price;
-
-        uint256 amount = songsOffers[seller][songId][buyer].amount;
-
         require(expectedPrice == offeredPrice);
         require(buyer != seller);
 
-        songsOffers[seller][songId][buyer].price = 0;
-        songsOffers[seller][songId][buyer].amount = 0;
+        tuniversOffers[tuniverId][buyer] = 0;
 
-        _makeTransaction(songId, buyer, seller, offeredPrice, amount);
+        _makeTransaction(tuniverId, buyer, seller, offeredPrice);
+
+        emit TuniverBought(tuniverId, buyer, seller, offeredPrice);
     }
 
-    function abortOffer(uint256 songId, address seller) external nonReentrant {
+    function abortOffer(uint256 tuniverId) external nonReentrant {
         address caller = msg.sender;
-        uint256 offerPrice = songsOffers[seller][songId][caller].price;
+        uint256 offerPrice = tuniversOffers[tuniverId][caller];
 
         require(offerPrice > 0);
 
-        songsOffers[seller][songId][caller].price = 0;
-        songsOffers[seller][songId][caller].amount = 0;
+        tuniversOffers[tuniverId][caller] = 0;
 
         (bool success, ) = caller.call{value: offerPrice}("");
         require(success);
+
+        emit TuniverOfferCanceled(tuniverId, caller);
     }
 
     function _makeTransaction(
-        uint256 songId,
+        uint256 tuniverId,
         address buyer,
         address seller,
-        uint256 price,
-        uint256 amount
+        uint256 price
     ) private {
         uint256 marketFee = (price * marketFeeInPercent) / PERCENT;
-        BuyInfo storage songInfo = songsOnSale[seller][songId];
-        if (amount < songInfo.amount) {
-            songsOnSale[seller][songId].amount = songsOnSale[seller][songId]
-                .price
-                .sub(amount);
-        } else {
-            songsOnSale[seller][songId].price = 0;
-            songsOnSale[seller][songId].amount = 0;
-        }
 
-        (bool isTransferToSeller, ) = seller.call{value: price - marketFee}("");
-        require(isTransferToSeller);
+        tuniversOnSale[tuniverId] = 0;
 
-        (bool isTransferToTreasury, ) = owner().call{value: marketFee}("");
-        require(isTransferToTreasury);
+        collectToken(buyer, seller, price - marketFee);
+        // (bool isTransferToSeller, ) = seller.call{value: price - marketFee}("");
+        // require(isTransferToSeller);
 
-        tuniverseContract.transferFrom(
-            address(this),
-            buyer,
-            songId,
-            amount,
-            ""
-        );
+        collectToken(buyer, owner(), marketFee);
+        // (bool isTransferToTreasury, ) = owner().call{value: marketFee}("");
+        // require(isTransferToTreasury);
+
+        tuniverContract.transferFrom(address(this), buyer, tuniverId);
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        virtual
-        override(ERC1155ReceiverUpgradeable, AccessControlUpgradeable)
-        returns (bool)
-    {
-        return super.supportsInterface(interfaceId);
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external override returns (bytes4) {
+        return
+            bytes4(
+                keccak256("onERC721Received(address,address,uint256,bytes)")
+            );
     }
 }

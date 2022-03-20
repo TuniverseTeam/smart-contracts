@@ -1,46 +1,42 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "./PermissionGroup.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract AcceptedToken is Initializable, PermissionGroup {
-    using SafeERC20Upgradeable for IERC20Upgradeable;
+contract AcceptedToken is Ownable {
+    using SafeERC20 for IERC20;
 
     // Token to be used in the ecosystem.
-    IERC20Upgradeable public acceptedToken;
+    IERC20 public acceptedToken;
 
-    function initialize(IERC20Upgradeable tokenAddress) public initializer {
+    constructor(IERC20 tokenAddress) {
         acceptedToken = tokenAddress;
     }
 
-    modifier collectTokenAsFee(uint256 amount, address destAddress) {
+    modifier collectTokenAsFee(uint256 amount, address destAddr) {
         require(
             acceptedToken.balanceOf(msg.sender) >= amount,
             "AcceptedToken: insufficient token balance"
         );
         _;
-        acceptedToken.safeTransferFrom(msg.sender, destAddress, amount);
+        acceptedToken.safeTransferFrom(msg.sender, destAddr, amount);
     }
 
-    function collectTokenAsPrice(uint256 amount, address destAddress) public {
-        require(
-            acceptedToken.balanceOf(msg.sender) >= amount,
-            "AcceptedToken: insufficient token balance"
-        );
-        acceptedToken.safeTransferFrom(msg.sender, destAddress, amount);
+    function collectToken(
+        address from,
+        address destAddr,
+        uint256 amount
+    ) public {
+        acceptedToken.safeTransferFrom(from, destAddr, amount);
     }
 
     /**
      * @dev Sets accepted token using in the ecosystem.
      */
-    function setAcceptedTokenContract(IERC20Upgradeable tokenAddr)
-        external
-        onlyOwner
-    {
+    function setAcceptedTokenContract(IERC20 tokenAddr) external onlyOwner {
         require(address(tokenAddr) != address(0));
         acceptedToken = tokenAddr;
     }

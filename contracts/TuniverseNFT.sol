@@ -80,7 +80,6 @@ contract TuniverNFT is
         returns (
             uint256 collectionType,
             uint256 nftType,
-            uint256[] memory extraRewards,
             uint256 royaltyShare
         )
     {
