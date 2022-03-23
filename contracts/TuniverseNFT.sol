@@ -22,6 +22,7 @@ contract TuniverNFT is
     bool public paused;
     uint256 private PERCENT;
     string private _uri;
+    bytes32 public ADMIN_ROLE;
     bytes32 public OPERATOR_ROLE;
 
     mapping(uint256 => bool) public blacklist;
@@ -31,13 +32,14 @@ contract TuniverNFT is
         __AccessControl_init();
         __ReentrancyGuard_init_unchained();
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        ADMIN_ROLE = keccak256("ADMIN_ROLE");
         OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
         _uri = baseURI;
     }
 
     function addTuniverToBlacklist(uint256 tuniverId)
         external
-        onlyRole(OPERATOR_ROLE)
+        onlyRole(ADMIN_ROLE)
     {
         require(tuniverId <= _tunivers.length, "TNV: invalid");
         blacklist[tuniverId] = true;
@@ -46,21 +48,18 @@ contract TuniverNFT is
 
     function removeTuniverFromBlacklist(uint256 tuniverId)
         external
-        onlyRole(OPERATOR_ROLE)
+        onlyRole(ADMIN_ROLE)
     {
         require(tuniverId <= _tunivers.length);
         blacklist[tuniverId] = false;
         emit RemoveTuniverFromBlacklist(tuniverId);
     }
 
-    function setPaused(bool _paused) external onlyRole(OPERATOR_ROLE) {
+    function setPaused(bool _paused) external onlyRole(ADMIN_ROLE) {
         paused = _paused;
     }
 
-    function setBaseURI(string memory baseURI)
-        external
-        onlyRole(OPERATOR_ROLE)
-    {
+    function setBaseURI(string memory baseURI) external onlyRole(ADMIN_ROLE) {
         _uri = baseURI;
     }
 
@@ -130,7 +129,7 @@ contract TuniverNFT is
     function mintBox(address buyer, uint256[] memory typeIds)
         external
         nonReentrant
-        onlyRole(OPERATOR_ROLE)
+        onlyRole(ADMIN_ROLE)
     {
         require(typeIds.length != 0, "TNV: invalid");
         for (uint256 i = 0; i < typeIds.length; i++) {

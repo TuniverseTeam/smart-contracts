@@ -44,11 +44,13 @@ interface ITuniver {
         returns (bool);
 
     /**
-     * @notice tuniver blacklisted.
+     * @notice add tuniverId to blacklist.
      */
-
     function addTuniverToBlacklist(uint256 tuniverId) external;
 
+    /**
+     * @notice remove tuniverId to blacklist.
+     */
     function removeTuniverFromBlacklist(uint256 tuniverId) external;
 
     /**
