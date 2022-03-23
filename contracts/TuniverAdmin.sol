@@ -80,4 +80,20 @@ contract TuniverAdmin is AccessControlUpgradeable {
         );
         tuniverContract.removeTuniverFromBlacklist(tuniverId);
     }
+
+    function setBaseURI(ITuniver tuniverContract, string memory baseURI)
+        external
+        onlyRole(CONTROLLER_ROLE)
+        onlySupportedAddress(tuniverContract)
+    {
+        tuniverContract.setBaseURI(baseURI);
+    }
+
+    function setPaused(ITuniver tuniverContract, bool _isPaused)
+        external
+        onlyRole(CONTROLLER_ROLE)
+        onlySupportedAddress(tuniverContract)
+    {
+        tuniverContract.setPaused(_isPaused);
+    }
 }

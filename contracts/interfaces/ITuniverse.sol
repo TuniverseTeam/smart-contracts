@@ -73,4 +73,18 @@ interface ITuniver {
         uint256 typeId,
         address caller
     ) external;
+
+    /**
+     * @notice paused function.
+     *
+     * @dev Prep function for admin contract.
+     */
+    function setPaused(bool _paused) external;
+
+    /**
+     * @notice set uri function.
+     *
+     * @dev Prep function for admin contract.
+     */
+    function setBaseURI(string memory baseURI) external;
 }
