@@ -3,18 +3,21 @@
 pragma solidity ^0.8.7;
 
 interface ITuniver {
-    event TuniverCreated(
-        uint256 collectionType,
-        uint256 nftType,
-        uint256 royaltyShare
+    event TuniverCreated(uint256 tuniverId, uint256 typeId);
+    event TuniverUpdated(
+        uint256 typeId,
+        bool isUnlock,
+        uint256 royalty,
+        uint256 rarity
     );
     event AddTuniverToBlacklist(uint256 tuniverId);
     event RemoveTuniverFromBlacklist(uint256 tuniverId);
 
     struct Tuniver {
-        uint256 collectionType;
-        uint256 nftType;
-        uint256 royaltyShare;
+        uint256 typeId;
+        bool isUnlock;
+        uint256 royalty;
+        uint256 rarity;
     }
 
     /**
@@ -26,9 +29,10 @@ interface ITuniver {
         external
         view
         returns (
-            uint256 collectionType,
-            uint256 nftType,
-            uint256 royaltyShare
+            uint256 typeId,
+            bool isUnlock,
+            uint256 royalty,
+            uint256 rarity
         );
 
     /**
@@ -40,6 +44,14 @@ interface ITuniver {
         returns (bool);
 
     /**
+     * @notice tuniver blacklisted.
+     */
+
+    function addTuniverToBlacklist(uint256 tuniverId) external;
+
+    function removeTuniverFromBlacklist(uint256 tuniverId) external;
+
+    /**
      * @notice mint tuniver for specific address.
      *
      * @dev Function take 3 arguments are address of buyer, amount.
@@ -47,7 +59,7 @@ interface ITuniver {
      * Requirements:
      * - onlyOperator
      */
-    function mintFor(address buyer, Tuniver[] memory tunivers) external;
+    function mintBox(address buyer, uint256[] memory typeIds) external;
 
     /**
      * @notice fusion 2 tuniver.
@@ -56,9 +68,7 @@ interface ITuniver {
      */
     function fusion(
         uint256[] memory tuniverIds,
-        uint256 collectionType,
-        uint256 nftType,
-        uint256 royaltyShare,
+        uint256 typeId,
         address caller
     ) external;
 }

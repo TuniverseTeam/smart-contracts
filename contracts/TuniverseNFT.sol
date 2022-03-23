@@ -22,7 +22,6 @@ contract TuniverNFT is
     bool public paused;
     uint256 private PERCENT;
     string private _uri;
-    bytes32 public CONTROLLER_ROLE;
     bytes32 public OPERATOR_ROLE;
 
     mapping(uint256 => bool) public blacklist;
@@ -32,14 +31,13 @@ contract TuniverNFT is
         __AccessControl_init();
         __ReentrancyGuard_init_unchained();
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
         OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
         _uri = baseURI;
     }
 
     function addTuniverToBlacklist(uint256 tuniverId)
         external
-        onlyRole(CONTROLLER_ROLE)
+        onlyRole(OPERATOR_ROLE)
     {
         require(tuniverId <= _tunivers.length, "TNV: invalid");
         blacklist[tuniverId] = true;
@@ -48,20 +46,20 @@ contract TuniverNFT is
 
     function removeTuniverFromBlacklist(uint256 tuniverId)
         external
-        onlyRole(CONTROLLER_ROLE)
+        onlyRole(OPERATOR_ROLE)
     {
         require(tuniverId <= _tunivers.length);
         blacklist[tuniverId] = false;
         emit RemoveTuniverFromBlacklist(tuniverId);
     }
 
-    function setPaused(bool _paused) external onlyRole(CONTROLLER_ROLE) {
+    function setPaused(bool _paused) external onlyRole(OPERATOR_ROLE) {
         paused = _paused;
     }
 
     function setBaseURI(string memory baseURI)
         external
-        onlyRole(CONTROLLER_ROLE)
+        onlyRole(OPERATOR_ROLE)
     {
         _uri = baseURI;
     }
@@ -78,31 +76,32 @@ contract TuniverNFT is
         external
         view
         returns (
-            uint256 collectionType,
-            uint256 nftType,
-            uint256 royaltyShare
+            uint256 typeId,
+            bool isUnlock,
+            uint256 royalty,
+            uint256 rarity
         )
     {
         Tuniver memory tuniver = _tunivers[tuniverId.sub(1)];
 
-        collectionType = tuniver.collectionType;
-        nftType = tuniver.nftType;
-        royaltyShare = tuniver.royaltyShare;
+        typeId = tuniver.typeId;
+        royalty = tuniver.royalty;
+        rarity = tuniver.rarity;
+        isUnlock = tuniver.isUnlock;
     }
 
     function _baseURI() internal view override returns (string memory) {
         return _uri;
     }
 
-    function _createTuniver(
-        uint256 collectionType,
-        uint256 nftType,
-        uint256 royaltyShare
-    ) private returns (uint256 tuniverId) {
-        _tunivers.push(Tuniver(collectionType, nftType, royaltyShare));
+    function _createTuniver(uint256 typeId)
+        private
+        returns (uint256 tuniverId)
+    {
+        _tunivers.push(Tuniver(typeId, false, 0, 0));
         tuniverId = _tunivers.length;
 
-        emit TuniverCreated(collectionType, nftType, royaltyShare);
+        emit TuniverCreated(tuniverId, typeId);
     }
 
     function _beforeTokenTransfer(
@@ -128,27 +127,37 @@ contract TuniverNFT is
         return _tunivers.length;
     }
 
-    function mintFor(address buyer, Tuniver[] memory tunivers)
+    function mintBox(address buyer, uint256[] memory typeIds)
         external
         nonReentrant
         onlyRole(OPERATOR_ROLE)
     {
-        require(tunivers.length != 0, "TNV: invalid");
-        for (uint256 i = 0; i < tunivers.length; i++) {
-            uint256 tuniverId = _createTuniver(
-                tunivers[i].collectionType,
-                tunivers[i].nftType,
-                tunivers[i].royaltyShare
-            );
+        require(typeIds.length != 0, "TNV: invalid");
+        for (uint256 i = 0; i < typeIds.length; i++) {
+            uint256 tuniverId = _createTuniver(typeIds[i]);
             _safeMint(buyer, tuniverId);
         }
     }
 
+    function unbox(
+        uint256 tuniverId,
+        uint256 royalty,
+        uint256 rarity
+    ) external onlyRole(OPERATOR_ROLE) {
+        Tuniver storage tuniver = _tunivers[tuniverId.sub(1)];
+
+        require(!tuniver.isUnlock, "TNV: unboxed");
+
+        tuniver.isUnlock = true;
+        tuniver.royalty = royalty;
+        tuniver.rarity = rarity;
+
+        emit TuniverUpdated(tuniver.typeId, true, royalty, rarity);
+    }
+
     function fusion(
         uint256[] memory tuniverIds,
-        uint256 collectionType,
-        uint256 nftType,
-        uint256 royaltyShare,
+        uint256 typeId,
         address caller
     ) external onlyRole(OPERATOR_ROLE) {
         require(tuniverIds.length == 2, "TNV: invalid tuniverId");
@@ -156,11 +165,7 @@ contract TuniverNFT is
             require(tuniverIds[i] <= _tunivers.length, "TNV: invalid Id");
             _burn(tuniverIds[i]);
         }
-        uint256 tuniverId = _createTuniver(
-            collectionType,
-            nftType,
-            royaltyShare
-        );
+        uint256 tuniverId = _createTuniver(typeId);
         _safeMint(caller, tuniverId);
     }
 
