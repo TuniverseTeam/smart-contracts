@@ -36,7 +36,7 @@ contract TuniverMarket is
         uint256 price
     );
 
-    ITuniver public tuniverContract;
+    ITuniverCollab public tuniverContract;
 
     bool public paused;
     uint256 marketFeeInPercent;
@@ -45,7 +45,7 @@ contract TuniverMarket is
     mapping(uint256 => mapping(address => uint256)) public tuniversOffers;
     mapping(uint256 => address) public ownerOf;
 
-    constructor(ITuniver _tuniverContract, IERC20 _acceptedToken)
+    constructor(ITuniverCollab _tuniverContract, IERC20 _acceptedToken)
         AcceptedToken(_acceptedToken)
     {
         tuniverContract = _tuniverContract;

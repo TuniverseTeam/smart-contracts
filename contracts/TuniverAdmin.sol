@@ -12,6 +12,7 @@ contract TuniverAdmin is AccessControlUpgradeable {
         _;
     }
 
+    mapping(address => bool) supportedAddressCollab;
     mapping(address => address) supportedAddress;
     bytes32 public CONTROLLER_ROLE;
     bytes32 public OPERATOR_ROLE;
@@ -24,6 +25,13 @@ contract TuniverAdmin is AccessControlUpgradeable {
         receiverFee = msg.sender;
         CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
         OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
+    }
+
+    function setSupportedAddressCollab(
+        address _contractAddress,
+        bool _isSupport
+    ) external {
+        supportedAddressCollab[_contractAddress] = _isSupport;
     }
 
     function setSupportedAddress(address _contractSupported, address _artist)
@@ -46,6 +54,10 @@ contract TuniverAdmin is AccessControlUpgradeable {
 
     function isSupported(address _contract) public view returns (address) {
         return supportedAddress[_contract];
+    }
+
+    function isSupportedCollab(address _contract) public view returns (bool) {
+        return supportedAddressCollab[_contract];
     }
 
     function mint(

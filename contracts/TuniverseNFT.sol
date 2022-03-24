@@ -28,7 +28,7 @@ contract TuniverNFT is
     mapping(uint256 => bool) public blacklist;
 
     function initialize(string memory baseURI) public initializer {
-        __ERC721_init_unchained("TuniverNFT", "TNV");
+        __ERC721_init_unchained("Tuniver Official NFT", "TNVNFT");
         __AccessControl_init();
         __ReentrancyGuard_init_unchained();
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);

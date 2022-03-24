@@ -1,5 +1,5 @@
-const Tuniverse = artifacts.require("Tuniverse");
+const Tuniver = artifacts.require("Tuniver");
 
 module.exports = function (deployer) {
-  deployer.deploy(Tuniverse, );
+  deployer.deploy(Tuniver);
 };

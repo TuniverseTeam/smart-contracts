@@ -10,6 +10,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "./utils/TokenWithdrawableBridge.sol";
+import "./interfaces/ITuniverAdmin.sol";
+import "./interfaces/ITuniverseCollab.sol";
 
 contract TuniverBridge is
     AccessControl,
@@ -18,8 +20,7 @@ contract TuniverBridge is
     Ownable,
     TokenWithdrawableBridge
 {
-    IERC721 public collabContract;
-    IERC721 public tuniverContract;
+    ITuniverAdmin public adminContract;
     uint256 public swapFee;
     bool public paused;
 
@@ -33,13 +34,7 @@ contract TuniverBridge is
     event SwapFeeUpdated(uint256 _swapFee);
     event Paused(bool isPaused);
 
-    constructor(
-        IERC721 _tuniverContract,
-        IERC721 _collabContract,
-        uint256 _swapFee
-    ) {
-        tuniverContract = _tuniverContract;
-        collabContract = _collabContract;
+    constructor(uint256 _swapFee) {
         swapFee = _swapFee;
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
@@ -58,32 +53,28 @@ contract TuniverBridge is
         }
     }
 
-    function setTuniverContract(IERC721 _tuniverContract)
-        external
-        onlyRole(CONTROLLER_ROLE)
-    {
-        tuniverContract = _tuniverContract;
-    }
-
-    function setCollabContract(IERC721 _collabContract)
-        external
-        onlyRole(CONTROLLER_ROLE)
-    {
-        collabContract = _collabContract;
-    }
-
     function togglePaused() external onlyRole(CONTROLLER_ROLE) {
         paused = !paused;
         emit Paused(paused);
     }
 
     function swap(
+        ITuniverCollab tuniverContract,
+        IERC721 collabContract,
         uint256 tokenId,
         address to,
         bool _isSwapIn
     ) external payable nonReentrant {
         require(!paused, "TuniverBridge: paused");
         require(msg.value == swapFee, "TuniverBridge: invalid fee");
+        require(
+            adminContract.isSupported(address(tuniverContract)) != address(0),
+            "TuniverBridge: not supported"
+        );
+        require(
+            adminContract.isSupportedCollab(address(collabContract)),
+            "TuniverBridge: not supported collab"
+        );
 
         if (_isSwapIn) {
             uint256 tuniverId = collabIdToTuniver[tokenId];
