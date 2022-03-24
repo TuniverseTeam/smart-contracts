@@ -20,12 +20,27 @@ contract TuniverBridge is
     Ownable,
     TokenWithdrawableBridge
 {
+    modifier onlySupportAddress(
+        ITuniverCollab tuniverContract,
+        IERC721 collabContract
+    ) {
+        require(
+            adminContract.isSupported(address(tuniverContract)) != address(0),
+            "TuniverBridge: not supported"
+        );
+        require(
+            adminContract.isSupportedCollab(address(collabContract)),
+            "TuniverBridge: not supported collab"
+        );
+        _;
+    }
+
     ITuniverAdmin public adminContract;
     uint256 public swapFee;
     bool public paused;
 
-    mapping(uint256 => uint256) public tuniverIdToCollab;
-    mapping(uint256 => uint256) public collabIdToTuniver;
+    mapping(address => mapping(uint256 => uint256)) public tuniverIdToCollab;
+    mapping(address => mapping(uint256 => uint256)) public collabIdToTuniver;
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
@@ -40,16 +55,26 @@ contract TuniverBridge is
     }
 
     function setTokenMapping(
+        ITuniverCollab tuniverContract,
+        IERC721 collabContract,
         uint256[] memory tuniverIds,
         uint256[] memory collabIds
-    ) external onlyRole(CONTROLLER_ROLE) {
+    )
+        external
+        onlyRole(CONTROLLER_ROLE)
+        onlySupportAddress(tuniverContract, collabContract)
+    {
         require(
             tuniverIds.length == collabIds.length,
             "TunvierBridge: invalid data"
         );
         for (uint256 i = 0; i < tuniverIds.length; i++) {
-            tuniverIdToCollab[tuniverIds[i]] = collabIds[i];
-            collabIdToTuniver[collabIds[i]] = tuniverIds[i];
+            tuniverIdToCollab[address(collabContract)][
+                tuniverIds[i]
+            ] = collabIds[i];
+            collabIdToTuniver[address(tuniverContract)][
+                collabIds[i]
+            ] = tuniverIds[i];
         }
     }
 
@@ -77,12 +102,16 @@ contract TuniverBridge is
         );
 
         if (_isSwapIn) {
-            uint256 tuniverId = collabIdToTuniver[tokenId];
+            uint256 tuniverId = collabIdToTuniver[address(tuniverContract)][
+                tokenId
+            ];
             require(tuniverId != 0, "TuniverBridge: not supported");
             collabContract.safeTransferFrom(msg.sender, address(this), tokenId);
             tuniverContract.transferFrom(address(this), msg.sender, tuniverId);
         } else {
-            uint256 collabId = tuniverIdToCollab[tokenId];
+            uint256 collabId = tuniverIdToCollab[address(collabContract)][
+                tokenId
+            ];
             require(collabId != 0, "TuniverBridge: not supported");
             tuniverContract.safeTransferFrom(
                 msg.sender,
