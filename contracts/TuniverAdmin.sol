@@ -1,6 +1,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "./TuniverseNFT.sol";
 import "./interfaces/ITuniverse.sol";
 
 contract TuniverAdmin is AccessControlUpgradeable {
@@ -58,6 +59,11 @@ contract TuniverAdmin is AccessControlUpgradeable {
 
     function isSupportedCollab(address _contract) public view returns (bool) {
         return supportedAddressCollab[_contract];
+    }
+
+    function createTuniver(string memory baseURI, address _artist) external {
+        TuniverNFT tuniverContract = new TuniverNFT(baseURI);
+        supportedAddress[address(tuniverContract)] = _artist;
     }
 
     function mint(

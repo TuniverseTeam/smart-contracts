@@ -2,38 +2,34 @@
 
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/ITuniverse.sol";
 
 contract TuniverNFT is
     ITuniver,
-    AccessControlUpgradeable,
-    ERC721EnumerableUpgradeable,
-    ReentrancyGuardUpgradeable
+    AccessControl,
+    ERC721Enumerable,
+    ReentrancyGuard
 {
-    using SafeMathUpgradeable for uint256;
+    using SafeMath for uint256;
 
     Tuniver[] private _tunivers;
     bool public paused;
     uint256 private PERCENT;
     string private _uri;
-    bytes32 public ADMIN_ROLE;
-    bytes32 public OPERATOR_ROLE;
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+    bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     mapping(uint256 => bool) public blacklist;
 
-    function initialize(string memory baseURI) public initializer {
-        __ERC721_init_unchained("Tuniver Official NFT", "TNVNFT");
-        __AccessControl_init();
-        __ReentrancyGuard_init_unchained();
+    constructor(string memory baseURI)
+        ERC721("Tuniver Official NFT", "TNVNFT")
+    {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        ADMIN_ROLE = keccak256("ADMIN_ROLE");
-        OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
         _uri = baseURI;
     }
 
@@ -172,7 +168,7 @@ contract TuniverNFT is
         public
         view
         virtual
-        override(ERC721EnumerableUpgradeable, AccessControlUpgradeable)
+        override(ERC721Enumerable, AccessControl)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
