@@ -1,10 +1,11 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
+import "./interfaces/ITuniverAdmin.sol";
 import "./TuniverseNFT.sol";
 import "./interfaces/ITuniverse.sol";
 
-contract TuniverAdmin is AccessControlUpgradeable {
+contract TuniverAdmin is ITuniverAdmin, AccessControlUpgradeable {
     modifier onlySupportedAddress(ITuniver _tuniverContract) {
         require(
             isSupported(address(_tuniverContract)) != address(0),
@@ -33,6 +34,7 @@ contract TuniverAdmin is AccessControlUpgradeable {
         bool _isSupport
     ) external {
         supportedAddressCollab[_contractAddress] = _isSupport;
+        emit TuniverCollabSupported(_contractAddress, _isSupport);
     }
 
     function setSupportedAddress(address _contractSupported, address _artist)
@@ -40,6 +42,7 @@ contract TuniverAdmin is AccessControlUpgradeable {
         onlyRole(CONTROLLER_ROLE)
     {
         supportedAddress[_contractSupported] = _artist;
+        emit TuniverSupported(_contractSupported, _artist);
     }
 
     function setReceiverFee(address _receiverFee)
@@ -62,8 +65,10 @@ contract TuniverAdmin is AccessControlUpgradeable {
     }
 
     function createTuniver(string memory baseURI, address _artist) external {
-        TuniverNFT tuniverContract = new TuniverNFT(baseURI);
+        TuniverNFT tuniverContract = new TuniverNFT(baseURI, address(this));
         supportedAddress[address(tuniverContract)] = _artist;
+
+        emit TuniverSupported(address(tuniverContract), _artist);
     }
 
     function mint(
@@ -86,6 +91,7 @@ contract TuniverAdmin is AccessControlUpgradeable {
         uint256 tuniverId
     ) external onlyRole(CONTROLLER_ROLE) onlySupportedAddress(tuniverContract) {
         tuniverContract.addTuniverToBlacklist(tuniverId);
+        emit TuniverBlacklisted(address(tuniverContract), tuniverId, true);
     }
 
     function removeTuniverFromBlacklist(
@@ -97,6 +103,8 @@ contract TuniverAdmin is AccessControlUpgradeable {
             "TNV: unsupported"
         );
         tuniverContract.removeTuniverFromBlacklist(tuniverId);
+
+        emit TuniverBlacklisted(address(tuniverContract), tuniverId, false);
     }
 
     function setBaseURI(ITuniver tuniverContract, string memory baseURI)

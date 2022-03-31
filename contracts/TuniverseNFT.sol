@@ -26,10 +26,11 @@ contract TuniverNFT is
 
     mapping(uint256 => bool) public blacklist;
 
-    constructor(string memory baseURI)
+    constructor(string memory baseURI, address adminContract)
         ERC721("Tuniver Official NFT", "TNVNFT")
     {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(ADMIN_ROLE, adminContract);
         _uri = baseURI;
     }
 
@@ -39,7 +40,6 @@ contract TuniverNFT is
     {
         require(tuniverId <= _tunivers.length, "TNV: invalid");
         blacklist[tuniverId] = true;
-        emit AddTuniverToBlacklist(tuniverId);
     }
 
     function removeTuniverFromBlacklist(uint256 tuniverId)
@@ -48,7 +48,6 @@ contract TuniverNFT is
     {
         require(tuniverId <= _tunivers.length);
         blacklist[tuniverId] = false;
-        emit RemoveTuniverFromBlacklist(tuniverId);
     }
 
     function setPaused(bool _paused) external onlyRole(ADMIN_ROLE) {
