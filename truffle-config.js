@@ -23,6 +23,15 @@
  //
  // const fs = require('fs');
  // const mnemonic = fs.readFileSync(".secret").toString().trim();
+
+ const numberOfAddresses = 3
+ const setupWallet = (url) => {
+  return new HDWalletProvider({
+    mnemonic: 'crumble economy swift space razor spatial warfare wire question buzz chef bless',
+    providerOrUrl: url,
+    numberOfAddresses
+  });
+}
  
  module.exports = {
    /**
@@ -70,6 +79,13 @@
        timeoutBlocks: 200,
        skipDryRun: true
      },
+     aurora: {
+      provider: () => setupWallet('https://testnet.aurora.dev'),
+      network_id: 1313161555,
+      from: process.env.PUBLIC_KEY,
+      timeoutBlocks: 500,
+      confirmations: 10,
+    }
      // Another network with more advanced options...
      // advanced: {
      // port: 8777,             // Custom port
