@@ -24,10 +24,10 @@
  // const fs = require('fs');
  // const mnemonic = fs.readFileSync(".secret").toString().trim();
 
- const numberOfAddresses = 3
+ const numberOfAddresses = 1
  const setupWallet = (url) => {
   return new HDWalletProvider({
-    mnemonic: 'crumble economy swift space razor spatial warfare wire question buzz chef bless',
+    mnemonic: 'curtain able goose phone student sunny carbon monitor clinic orchard pioneer grass',
     providerOrUrl: url,
     numberOfAddresses
   });
@@ -78,13 +78,19 @@
        confirmations: 10,
        timeoutBlocks: 200,
        skipDryRun: true
-     },
+     },//'https://testnet.aurora.dev
      aurora: {
-      provider: () => setupWallet('https://testnet.aurora.dev'),
+      provider: () => new HDWalletProvider( {
+        privateKeys: [process.env.PRIVATE_KEY],
+        providerOrUrl:`https://testnet.aurora.dev`,
+        numberOfAddresses:1
+      }),
       network_id: 1313161555,
       from: process.env.PUBLIC_KEY,
-      timeoutBlocks: 500,
+      timeoutBlocks: 200,
       confirmations: 10,
+      gas: 10000000,
+      skipDryRun: true
     }
      // Another network with more advanced options...
      // advanced: {

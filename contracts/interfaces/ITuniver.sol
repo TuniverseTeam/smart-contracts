@@ -3,21 +3,25 @@
 pragma solidity ^0.8.7;
 
 interface ITuniver {
-    event TuniverCreated(uint256 tuniverId, uint256 typeId);
+    event TuniverCreated(uint256 tuniverId, address artist);
     event TuniverUpdated(
-        uint256 typeId,
-        bool isUnlock,
+        uint256 tuniverId,
         uint256 royalty,
-        uint256 rarity
+        uint256 rarity,
+        address artist
     );
     event AddTuniverToBlacklist(uint256 tuniverId);
     event RemoveTuniverFromBlacklist(uint256 tuniverId);
 
     struct Tuniver {
-        uint256 typeId;
-        bool isUnlock;
         uint256 royalty;
         uint256 rarity;
+        address artist;
+    }
+
+    struct TuniverInput {
+        uint256 rarity;
+        address artist;
     }
 
     /**
@@ -29,11 +33,20 @@ interface ITuniver {
         external
         view
         returns (
-            uint256 typeId,
-            bool isUnlock,
             uint256 royalty,
-            uint256 rarity
+            uint256 rarity,
+            address artist
         );
+
+    /**
+     * @notice get royalty of artist with rarity.
+     */
+    function getRoyaltyOf(address artist, uint256 rarity) external;
+
+    /**
+     * @notice get rarity by id.
+     */
+    function getRarityOf(uint256 tuniverId) external;
 
     /**
      * @notice tuniver blacklisted.
@@ -56,23 +69,17 @@ interface ITuniver {
     /**
      * @notice mint tuniver for specific address.
      *
-     * @dev Function take 3 arguments are address of buyer, amount.
+     * @dev Function take 2 arguments are amount and artist.
      *
-     * Requirements:
-     * - onlyOperator
      */
-    function mintBox(address buyer, uint256[] memory typeIds) external;
+    function mintFor(TuniverInput[] memory tunivers, address buyer) external;
 
     /**
-     * @notice fusion 2 tuniver.
+     * @notice Upgrade tuniver rarity.
      *
      * @dev Prep function for fusion.
      */
-    function fusion(
-        uint256[] memory tuniverIds,
-        uint256 typeId,
-        address caller
-    ) external;
+    function upgrade(uint256 tuniverId) external;
 
     /**
      * @notice paused function.
