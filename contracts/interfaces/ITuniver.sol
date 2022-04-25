@@ -3,23 +3,12 @@
 pragma solidity ^0.8.7;
 
 interface ITuniver {
-    event TuniverCreated(uint256 tuniverId, address artist);
-    event TuniverUpdated(
-        uint256 tuniverId,
-        uint256 royalty,
-        uint256 rarity,
-        address artist
-    );
+    event TuniverCreated(uint256 tuniverId, uint256 rarity, address artist);
+    event TuniverUpdated(uint256 tuniverId, uint256 rarity, address artist);
     event AddTuniverToBlacklist(uint256 tuniverId);
     event RemoveTuniverFromBlacklist(uint256 tuniverId);
 
     struct Tuniver {
-        uint256 royalty;
-        uint256 rarity;
-        address artist;
-    }
-
-    struct TuniverInput {
         uint256 rarity;
         address artist;
     }
@@ -41,12 +30,18 @@ interface ITuniver {
     /**
      * @notice get royalty of artist with rarity.
      */
-    function getRoyaltyOf(address artist, uint256 rarity) external;
+    function getRoyaltyOf(address artist, uint256 rarity)
+        external
+        view
+        returns (uint256 royalty);
 
     /**
      * @notice get rarity by id.
      */
-    function getRarityOf(uint256 tuniverId) external;
+    function getRarityOf(uint256 tuniverId)
+        external
+        view
+        returns (uint256 rarity);
 
     /**
      * @notice tuniver blacklisted.
@@ -72,7 +67,7 @@ interface ITuniver {
      * @dev Function take 2 arguments are amount and artist.
      *
      */
-    function mintFor(TuniverInput[] memory tunivers, address buyer) external;
+    function mintFor(Tuniver[] memory tunivers, address buyer) external;
 
     /**
      * @notice Upgrade tuniver rarity.

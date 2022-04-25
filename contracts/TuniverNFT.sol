@@ -34,7 +34,7 @@ contract TuniverNFT is
     {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(CONTROLLER_ROLE, adminContract);
-        _createTuniver(address(0), 0, 0); // ignore tuniver with id = 0
+        _createTuniver(address(0), 0); // ignore tuniver with id = 0
         _uri = baseURI;
     }
 
@@ -95,7 +95,7 @@ contract TuniverNFT is
     {
         Tuniver memory tuniver = _tunivers[tuniverId];
 
-        royalty = tuniver.royalty;
+        royalty = royaltyOf[tuniver.artist][tuniver.rarity];
         rarity = tuniver.rarity;
         artist = tuniver.artist;
     }
@@ -122,15 +122,14 @@ contract TuniverNFT is
         return _uri;
     }
 
-    function _createTuniver(
-        address artist,
-        uint256 royalty,
-        uint256 rarity
-    ) private returns (uint256 tuniverId) {
-        _tunivers.push(Tuniver(royalty, rarity, artist));
+    function _createTuniver(address artist, uint256 rarity)
+        private
+        returns (uint256 tuniverId)
+    {
+        _tunivers.push(Tuniver(rarity, artist));
         tuniverId = _tunivers.length - 1;
 
-        emit TuniverCreated(tuniverId, artist);
+        emit TuniverCreated(tuniverId, rarity, artist);
     }
 
     function _beforeTokenTransfer(
@@ -156,7 +155,7 @@ contract TuniverNFT is
         return _tunivers.length - 1;
     }
 
-    function mintFor(TuniverInput[] memory tunivers, address buyer)
+    function mintFor(Tuniver[] memory tunivers, address buyer)
         external
         nonReentrant
         onlyRole(SERVER_ROLE)
@@ -168,7 +167,6 @@ contract TuniverNFT is
 
             uint256 tuniverId = _createTuniver(
                 tunivers[i].artist,
-                royalty,
                 tunivers[i].rarity
             );
             _safeMint(buyer, tuniverId);
@@ -178,12 +176,10 @@ contract TuniverNFT is
     function upgrade(uint256 tuniverId) external onlyRole(OPERATOR_ROLE) {
         Tuniver storage tuniver = _tunivers[tuniverId];
         uint256 rarityUpdate = tuniver.rarity.add(1);
-        uint256 royaltyUpdate = royaltyOf[tuniver.artist][rarityUpdate];
 
         require(royaltyUpdate != 0, "rarity not support");
 
         tuniver.rarity = rarityUpdate;
-        tuniver.royalty = royaltyUpdate;
     }
 
     function supportsInterface(bytes4 interfaceId)
