@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -177,7 +176,10 @@ contract TuniverNFT is
         Tuniver storage tuniver = _tunivers[tuniverId];
         uint256 rarityUpdate = tuniver.rarity.add(1);
 
-        require(royaltyUpdate != 0, "rarity not support");
+        require(
+            royaltyOf[tuniver.artist][rarityUpdate] != 0,
+            "rarity not support"
+        );
 
         tuniver.rarity = rarityUpdate;
     }
