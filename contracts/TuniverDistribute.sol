@@ -7,14 +7,20 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./utils/TokenWithdrawableBridge.sol";
 import "./interfaces/ITuniver.sol";
 
-contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
+contract TuniverDistribute is
+    EIP712,
+    AccessControl,
+    ReentrancyGuard,
+    TokenWithdrawableBridge
+{
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
     event Claimed(
-        string claimId,
+        uint256 claimId,
         uint256 totalClaim,
         address receipt,
         address caller
@@ -22,9 +28,9 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
 
     struct Tuniver {
         uint256 totalClaim;
-        string claimId;
+        uint256 claimId;
         address receipt;
-        IERC20 token;
+        address token;
     }
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
@@ -33,19 +39,11 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
     string private constant SIGNATURE_VERSION = "1";
     bool public paused;
 
-    mapping(IERC20 => bool) acceptedToken;
-    mapping(string => bool) private claimedId;
+    mapping(uint256 => bool) private claimedId;
 
     constructor() EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(CONTROLLER_ROLE, msg.sender);
-    }
-
-    function setAcceptedToken(IERC20 token, bool isAccept)
-        external
-        onlyRole(CONTROLLER_ROLE)
-    {
-        acceptedToken[token] = isAccept;
     }
 
     function togglePause() external onlyRole(CONTROLLER_ROLE) {
@@ -56,7 +54,7 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
         external
     {
         address signer = _verify(tuniverNft, signature);
-        IERC20 token = tuniverNft.token;
+        IERC20 token = IERC20(tuniverNft.token);
 
         require(!paused, "TNV: paused");
         require(
@@ -64,7 +62,6 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
             "TNV: Signature invalid or unauthorized"
         );
         require(!claimedId[tuniverNft.claimId], "TNV: id claimed");
-        require(acceptedToken[token], "TNV: token not supported");
 
         token.transfer(tuniverNft.receipt, tuniverNft.totalClaim);
         claimedId[tuniverNft.claimId] = true;
@@ -87,12 +84,12 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "Tuniver(uint256 totalClaim,uint256 claimId,uint256 receipt,IERC20 token)"
+                            "Tuniver(uint256 totalClaim,uint256 claimId,uint256 receipt,address token)"
                         ),
-                        keccak256(abi.encodePacked(tuniverNft.totalClaim)),
-                        keccak256(abi.encodePacked(tuniverNft.claimId)),
-                        keccak256(abi.encodePacked(tuniverNft.receipt)),
-                        keccak256(abi.encodePacked(tuniverNft.token))
+                        tuniverNft.totalClaim,
+                        tuniverNft.claimId,
+                        tuniverNft.receipt,
+                        tuniverNft.token
                     )
                 )
             );
