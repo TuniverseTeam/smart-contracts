@@ -19,6 +19,7 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
         uint256 totalClaim;
         string claimId;
         address receipt;
+        IERC20 token;
     }
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
@@ -46,12 +47,11 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
         paused = !paused;
     }
 
-    function claim(
-        IERC20 token,
-        Tuniver calldata tuniverNft,
-        bytes memory signature
-    ) external {
+    function claim(Tuniver calldata tuniverNft, bytes memory signature)
+        external
+    {
         address signer = _verify(tuniverNft, signature);
+        IERC20 token = tuniverNft.token;
 
         require(!paused, "TNV: paused");
         require(
@@ -77,11 +77,12 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "Tuniver(uint256 totalClaim, uint256 claimId, uint256 receipt)"
+                            "Tuniver(uint256 totalClaim,uint256 claimId,uint256 receipt,IERC20 token)"
                         ),
                         keccak256(abi.encodePacked(tuniverNft.totalClaim)),
                         keccak256(abi.encodePacked(tuniverNft.claimId)),
-                        keccak256(abi.encodePacked(tuniverNft.receipt))
+                        keccak256(abi.encodePacked(tuniverNft.receipt)),
+                        keccak256(abi.encodePacked(tuniverNft.token))
                     )
                 )
             );
