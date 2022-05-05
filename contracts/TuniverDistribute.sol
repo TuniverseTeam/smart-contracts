@@ -13,7 +13,12 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    event Claimed(string claimId, uint256 totalClaim);
+    event Claimed(
+        string claimId,
+        uint256 totalClaim,
+        address receipt,
+        address caller
+    );
 
     struct Tuniver {
         uint256 totalClaim;
@@ -64,7 +69,12 @@ contract TuniverDistribute is EIP712, AccessControl, ReentrancyGuard {
         token.transfer(tuniverNft.receipt, tuniverNft.totalClaim);
         claimedId[tuniverNft.claimId] = true;
 
-        emit Claimed(tuniverNft.claimId, tuniverNft.totalClaim);
+        emit Claimed(
+            tuniverNft.claimId,
+            tuniverNft.totalClaim,
+            tuniverNft.receipt,
+            msg.sender
+        );
     }
 
     function _hash(Tuniver calldata tuniverNft)
