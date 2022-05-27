@@ -7,6 +7,10 @@
   truffle console
 ```
 
+### Compile
+```
+  truffle compile --all
+```
 ### testing
 ```
   truffle test

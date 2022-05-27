@@ -34,7 +34,6 @@ contract TuniverDistribute is
     }
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
-    bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
     string private constant SIGNING_DOMAIN = "LazyDistribute-Tuniver";
     string private constant SIGNATURE_VERSION = "1";
     bool public paused;
@@ -42,11 +41,14 @@ contract TuniverDistribute is
     mapping(uint256 => bool) private claimedId;
 
     constructor() EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(CONTROLLER_ROLE, msg.sender);
+        _setupRole(
+            DEFAULT_ADMIN_ROLE,
+            0x690ad03BF5b366635569C74bEC957F95f73C7D09
+        );
+        _setupRole(SERVER_ROLE, 0xFFF781b942C19a62683E8A595528e332f684c36A);
     }
 
-    function togglePause() external onlyRole(CONTROLLER_ROLE) {
+    function togglePause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         paused = !paused;
     }
 
@@ -84,7 +86,7 @@ contract TuniverDistribute is
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "Tuniver(uint256 totalClaim,uint256 claimId,uint256 receipt,address token)"
+                            "Tuniver(uint256 totalClaim,uint256 claimId,address receipt,address token)"
                         ),
                         tuniverNft.totalClaim,
                         tuniverNft.claimId,
