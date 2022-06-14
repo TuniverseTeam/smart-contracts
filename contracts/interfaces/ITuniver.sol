@@ -3,14 +3,40 @@
 pragma solidity ^0.8.7;
 
 interface ITuniver {
-    event TuniverCreated(uint256 tuniverId, uint256 rarity, address artist);
-    event TuniverUpdated(uint256 tuniverId, uint256 rarity, address artist);
+    event TuniverCreated(uint256 collectionId, uint256 tuniverId);
+    event CollectionCreated(
+        uint256 collectionId,
+        string artistName,
+        address artist,
+        uint256[] royalty,
+        uint256[] royaltyMultiplier,
+        uint256 maxSupply
+    );
+
+    event CollectionUpdated(
+        uint256 collectionId,
+        string artistName,
+        address artist,
+        uint256[] royalty,
+        uint256[] royaltyMultiplier,
+        uint256 maxSupply
+    );
+
     event AddTuniverToBlacklist(uint256 tuniverId);
     event RemoveTuniverFromBlacklist(uint256 tuniverId);
 
     struct Tuniver {
-        uint256 rarity;
+        uint256 collectionId;
+        uint256 royaltyId;
+    }
+
+    struct Collection {
+        string artistName;
         address artist;
+        uint256[] royalty;
+        uint256[] royaltyMultiplier;
+        uint256 maxSupply;
+        uint256 minted;
     }
 
     /**
@@ -21,27 +47,22 @@ interface ITuniver {
     function getTuniver(uint256 tuniverId)
         external
         view
-        returns (
-            uint256 royalty,
-            uint256 rarity,
-            address artist
-        );
+        returns (uint256 royaltyShare, address artist);
 
     /**
-     * @notice get royalty of artist with rarity.
+     * @notice getTuniver collection ID.
+     *
+     * @dev Prep function for staking.
      */
-    function getRoyaltyOf(address artist, uint256 rarity)
+    function getTuniverCollectionId(uint256 tuniverId)
         external
         view
-        returns (uint256 royalty);
+        returns (Tuniver memory tuniver);
 
-    /**
-     * @notice get rarity by id.
-     */
-    function getRarityOf(uint256 tuniverId)
+    function getCollection(uint256 collectionId)
         external
         view
-        returns (uint256 rarity);
+        returns (Collection memory collection);
 
     /**
      * @notice tuniver blacklisted.
@@ -68,13 +89,6 @@ interface ITuniver {
      *
      */
     function mintFor(Tuniver[] memory tunivers, address buyer) external;
-
-    /**
-     * @notice Upgrade tuniver rarity.
-     *
-     * @dev Prep function for fusion.
-     */
-    function upgrade(uint256 tuniverId) external;
 
     /**
      * @notice paused function.

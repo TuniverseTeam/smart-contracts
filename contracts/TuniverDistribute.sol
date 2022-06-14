@@ -43,7 +43,7 @@ contract TuniverDistribute is
     constructor() EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
         _setupRole(
             DEFAULT_ADMIN_ROLE,
-            0x690ad03BF5b366635569C74bEC957F95f73C7D09
+            0x691FE7eeDbD1297bF00b229c2681dd5AC5454fbf
         );
         _setupRole(SERVER_ROLE, 0xFFF781b942C19a62683E8A595528e332f684c36A);
     }
