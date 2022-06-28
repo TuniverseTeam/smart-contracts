@@ -9,7 +9,6 @@ interface ITuniver {
         string artistName,
         address artist,
         uint256[] royalty,
-        uint256[] royaltyMultiplier,
         uint256 maxSupply
     );
 
@@ -18,7 +17,6 @@ interface ITuniver {
         string artistName,
         address artist,
         uint256[] royalty,
-        uint256[] royaltyMultiplier,
         uint256 maxSupply
     );
 
@@ -34,7 +32,6 @@ interface ITuniver {
         string artistName;
         address artist;
         uint256[] royalty;
-        uint256[] royaltyMultiplier;
         uint256 maxSupply;
         uint256 minted;
     }

@@ -3,13 +3,27 @@
 pragma solidity ^0.8.7;
 
 interface ITunipass {
-    event TunipassCreated(uint256 tunipassId, uint256 collectionId);
-
+    event TunipassCreated(uint256 tunipassId, uint256 artistId);
     event AddTunipassToBlacklist(uint256 tunipassId);
+    event ArtistInfo(
+        uint256 artistId,
+        address _artist,
+        uint256 maxSupply,
+        uint256[] multiplied
+    );
+    event LevelUp(uint256 level, uint256 tunipassId);
     event RemoveTunipassFromBlacklist(uint256 tunipassId);
 
+    struct Artist {
+        address _artist;
+        uint256 maxSupply;
+        uint256[] multiplied; // mul by level require length === max level
+        uint256 minted;
+    }
+
     struct Tunipass {
-        uint256 collectionId;
+        uint256 artistId;
+        uint256 level;
         uint256 equipting; // equipting address
     }
 

@@ -55,19 +55,11 @@ contract TuniverRoyalTune is
         string memory artistName,
         address artist,
         uint256[] memory royalty,
-        uint256[] memory royaltyMultiplier,
         uint256 maxSupply
     ) external onlyRole(CONTROLLER_ROLE) {
         require(artist != address(0) && maxSupply != 0);
         _collections.push(
-            Collection(
-                artistName,
-                artist,
-                royalty,
-                royaltyMultiplier,
-                maxSupply,
-                0
-            )
+            Collection(artistName, artist, royalty, maxSupply, 0)
         );
         uint256 collectionId = _collections.length.sub(1);
 
@@ -76,7 +68,6 @@ contract TuniverRoyalTune is
             artistName,
             artist,
             royalty,
-            royaltyMultiplier,
             maxSupply
         );
     }
@@ -86,14 +77,12 @@ contract TuniverRoyalTune is
         string memory artistName,
         address artist,
         uint256[] memory royalty,
-        uint256[] memory royaltyMultiplier,
         uint256 maxSupply
     ) external onlyRole(CONTROLLER_ROLE) {
         Collection storage collection = _collections[collectionId];
         collection.artistName = artistName;
         collection.artist = artist;
         collection.royalty = royalty;
-        collection.royaltyMultiplier = royaltyMultiplier;
         collection.maxSupply = maxSupply;
 
         emit CollectionUpdated(
@@ -101,7 +90,6 @@ contract TuniverRoyalTune is
             artistName,
             artist,
             royalty,
-            royaltyMultiplier,
             maxSupply
         );
     }

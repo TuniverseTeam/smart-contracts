@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./interfaces/ITuniverTunipass.sol";
+import "./interfaces/ITunipass.sol";
 import "./interfaces/ITuniver.sol";
 
 contract Tunipass is
@@ -19,12 +19,14 @@ contract Tunipass is
 
     ITuniver public tuniverContract;
 
+    Artist[] private _artists;
     Tunipass[] private _tunipasses;
 
     bool public paused;
     string private _uri;
 
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
+    bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
 
     mapping(uint256 => bool) public blacklist;
@@ -33,6 +35,38 @@ contract Tunipass is
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         // _createTuniver(0, 0); // ignore tuniver with id = 0
         _uri = baseURI;
+    }
+
+    function addArtist(Artist memory _artist)
+        external
+        onlyRole(CONTROLLER_ROLE)
+    {
+        _artists.push(_artist);
+        uint256 artistId = _artists.length - 1;
+
+        emit ArtistInfo(
+            artistId,
+            _artist._artist,
+            _artist.maxSupply,
+            _artist.multiplied
+        );
+    }
+
+    function updateArtist(uint256 artistId, Artist memory _artist)
+        external
+        onlyRole(CONTROLLER_ROLE)
+    {
+        Artist storage artist = _artists[artistId];
+        artist._artist = _artist._artist;
+        artist.multiplied = _artist.multiplied;
+        artist.maxSupply = _artist.maxSupply;
+
+        emit ArtistInfo(
+            artistId,
+            _artist._artist,
+            _artist.maxSupply,
+            _artist.multiplied
+        );
     }
 
     function addTunipassToBlacklist(uint256 tunipassId)
@@ -92,27 +126,47 @@ contract Tunipass is
         return _uri;
     }
 
-    function createTunipass(uint256 collectionId, address buyer)
+    function levelUp(uint256 tunipassId, uint256 amount)
         external
-        override
         onlyRole(OPERATOR_ROLE)
     {
-        uint256 maxSupply = tuniverContract
-            .getCollection(collectionId)
-            .maxSupply;
-        require(maxSupply != 0);
-        uint256 tunipassId = _createTunipass(collectionId);
+        Tunipass storage tunipass = _tunipasses[tunipassId];
+        Artist memory artist = _artists[tunipass.artistId];
+        uint256 level = tunipass.level.add(amount);
+
+        require(level < artist.multiplied.length, "exceeded level");
+
+        tunipass.level = level;
+
+        emit LevelUp(level, tunipassId);
+    }
+
+    function createTunipass(uint256 artistId, address buyer)
+        external
+        override
+        onlyRole(SERVER_ROLE)
+    {
+        uint256 tunipassId = _createTunipass(artistId);
         _safeMint(buyer, tunipassId);
     }
 
-    function _createTunipass(uint256 collectionId)
+    function _createTunipass(uint256 artistId)
         private
         returns (uint256 tunipassId)
     {
-        _tunipasses.push(Tunipass(collectionId, 0));
+        Artist storage artist = _artists[artistId];
+
+        require(
+            artist.minted.add(1) <= artist.maxSupply && artist.maxSupply > 0,
+            "exceeded"
+        );
+
+        artist.minted = artist.minted.add(1);
+
+        _tunipasses.push(Tunipass(artistId, 0, 0));
         tunipassId = _tunipasses.length - 1;
 
-        emit TunipassCreated(tunipassId, collectionId);
+        emit TunipassCreated(tunipassId, artistId);
     }
 
     function _beforeTokenTransfer(
