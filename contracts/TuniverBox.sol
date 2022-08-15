@@ -11,6 +11,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
     using SafeMath for uint256;
 
+    event ArtistCreated(uint256 artistId, string artistName);
+    event ArtistRemoved(uint256 artistId);
     event BoxCreated(uint256 boxId, uint256 artistId, address owner);
     event BoxOpened(uint256 boxId, uint256 artistId);
 
@@ -49,9 +51,17 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
     function setBaseURI(string memory baseURI) external onlyOwner {
         _uri = baseURI;
     }
+
+    function addArtist(string memory name) external onlyOwner {
+        _artists.push(name);
+        uint256 artistId = _artists.length - 1;
+        emit ArtistCreated(artistId, name);
+    }
     
     function removeArtistSupported(uint256 artistId) external onlyOwner {
+        
         delete _artists[artistId];
+        emit ArtistRemoved(artistId);
     }
 
     function setPricePerBox(uint256 _pricePerBox) external onlyOwner {
@@ -128,7 +138,7 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
             require(!blacklist[id], "Box blacklisted");
             require(ownerOf(id) == msg.sender, "invalid owner");
             _burn(id);
-             emit BoxOpened(id, _boxes[id]);
+            emit BoxOpened(id, _boxes[id]);
         }
        
     }
