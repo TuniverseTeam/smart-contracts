@@ -79,7 +79,7 @@ contract TuniverCollaborator is EIP712, AccessControl {
         }
 
         
-        boxContract.buy(amount, msg.sender);
+        boxContract.buy(amount, msg.sender, buyer.artistId);
     }
 
     function _hash(Buyer calldata buyer)
