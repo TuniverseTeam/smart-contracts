@@ -9,7 +9,9 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
-    event BoxCreated(uint256 boxId, uint256 version);
+    using SafeMath for uint256;
+
+    event BoxCreated(uint256 boxId, uint256 version, address owner);
     event BoxOpened(uint256[] boxIds);
 
     modifier onlyNotPaused() {
@@ -21,17 +23,17 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
         _;
     }
 
-    using SafeMath for uint256;
     struct Collaborator {
         uint256 maxSupply;
         uint256 minted;
         uint256[] mintedIds;
     }
 
-    mapping(address => Collaborator) public _collaborators;
+    mapping(address => mapping(uint256 => Collaborator)) public _collaborators; // adress collab => artistId
     mapping(uint256 => bool) public blacklist;
 
-    uint256[] private _boxes; // contain version of sell box
+    string[] private _artists; // contain name of artist
+    uint256[] private _boxes; // contain artistId
     uint256 public pricePerBox; // will define when deploying
     bool public paused;
     uint256 public version = 1;
@@ -49,6 +51,10 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
         _uri = baseURI;
     }
 
+    function removeArtistSupported(uint256 artistId) external onlyOwner {
+        delete _artists[artistId];
+    }
+
     function setPricePerBox(uint256 _pricePerBox) external onlyOwner {
         pricePerBox = _pricePerBox;
     }
@@ -57,26 +63,38 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
         version = _version;
     }
 
+    function getPricePerBox() public view returns(uint256) {
+        return pricePerBox;
+    }
+
+    function getVersion() public view returns(uint256) {
+        return version;
+    }
+
+    function getArtistName(uint256 artistId) external view returns(string memory) {
+        return _artists[artistId];
+    }
+
     function _baseURI() internal view override returns (string memory) {
         return _uri;
     }
 
-    function setCollaborator(address _contract, uint256 _maxSupply)
+    function setCollaborator(address _contract, uint256 _maxSupply, uint256 artistId)
         external
         onlyOwner
     {
-        _collaborators[_contract] = Collaborator(
+        _collaborators[_contract][artistId] = Collaborator(
             _maxSupply,
             0,
             new uint256[](0)
         );
     }
 
-    function _createTuniverBox() private returns (uint256 boxId) {
+    function _createTuniverBox(address owner) private returns (uint256 boxId) {
         _boxes.push(version);
         boxId = _boxes.length - 1;
 
-        emit BoxCreated(boxId, version);
+        emit BoxCreated(boxId, version, owner);
     }
 
     function _beforeTokenTransfer(
@@ -92,20 +110,22 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
         return _boxes.length - 1;
     }
 
-    function buy(uint256 amount, address buyer)
+    function buy(uint256 amount, address buyer, uint256 artistId)
         external
         nonReentrant
         onlyNotPaused
     {
-        Collaborator storage collaborator = _collaborators[msg.sender];
+        require(_artists[artistId] != 0, "artist not supported");
+        Collaborator storage collaborator = _collaborators[msg.sender][artistId];
+        uint256 totalMinted = collaborator.minted.add((amount));
         require(
             collaborator.maxSupply != 0 &&
-                collaborator.minted <= collaborator.maxSupply,
+                totalMinted <= collaborator.maxSupply,
             "invalid collaborator"
         );
-        collaborator.minted = collaborator.minted.add(amount);
+        collaborator.minted = totalMinted;
         for (uint256 i = 0; i < amount; i++) {
-            uint256 boxId = _createTuniverBox();
+            uint256 boxId = _createTuniverBox(buyer);
             collaborator.mintedIds.push(boxId);
             _safeMint(buyer, boxId);
         }
@@ -113,6 +133,7 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
 
     function open(uint256[] memory boxIds) external onlyNotPaused {
         for (uint256 i = 0; i < boxIds.length; i++) {
+            require(!blacklist[boxIds[i]], "Box blacklisted");
             require(ownerOf(boxIds[i]) == msg.sender, "invalid owner");
             require(!blacklist[boxIds[i]], "box blacklisted");
             _burn(boxIds[i]);
