@@ -18,7 +18,7 @@ contract TuniverCollaborator is EIP712, AccessControl {
         _;
     }
 
-    ITuniverBox public boxContract = ITuniverBox(0xa5eE38d23bfBE8064bcC49c088F42183F94B81B0);
+    ITuniverBox public boxContract = ITuniverBox(0xaC150715e398C649e507f15e2c1500E91f48dabe);
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
@@ -32,7 +32,7 @@ contract TuniverCollaborator is EIP712, AccessControl {
         address buyerAddress;
         uint256 totalPrice;
         address tokenAddress;
-        uint256 artistId;
+        uint256 collectionId;
     }
 
     constructor() EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
@@ -57,7 +57,6 @@ contract TuniverCollaborator is EIP712, AccessControl {
     }
 
     function buy(Buyer calldata buyer, bytes memory signature)  external payable onlyNotPaused {
-
         address signer = _verify(buyer, signature);
         bool isNativeToken = buyer.tokenAddress == address(0);
         IERC20 token = IERC20(buyer.tokenAddress);
@@ -79,7 +78,7 @@ contract TuniverCollaborator is EIP712, AccessControl {
         }
 
         
-        boxContract.buy(amount, msg.sender, buyer.artistId);
+        boxContract.buy(amount, msg.sender, buyer.collectionId);
     }
 
     function _hash(Buyer calldata buyer)
@@ -92,13 +91,13 @@ contract TuniverCollaborator is EIP712, AccessControl {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            "Buyer(uint256 amount,address buyerAddress,uint256 totalPrice,address tokenAddress,uint256 artistId)"
+                            "Buyer(uint256 amount,address buyerAddress,uint256 totalPrice,address tokenAddress,uint256 collectionId)"
                         ),
                         buyer.amount,
                         buyer.buyerAddress,
                         buyer.totalPrice,
                         buyer.tokenAddress,
-                        buyer.artistId
+                        buyer.collectionId
                     )
                 )
             );
