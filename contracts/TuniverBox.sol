@@ -41,6 +41,7 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
 
     constructor(string memory baseURI) ERC721("TuniverBox", "TNB") {
         _uri = baseURI;
+        collections.push(false); //ignore id 0
     }
 
     function togglePaused() external onlyOwner {

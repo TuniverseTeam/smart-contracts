@@ -33,10 +33,10 @@ contract TuniverDistribute is
         address token;
     }
 
+    bool public paused;
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     string private constant SIGNING_DOMAIN = "LazyDistribute-Tuniver";
     string private constant SIGNATURE_VERSION = "1";
-    bool public paused;
 
     mapping(uint256 => bool) private claimedId;
 
