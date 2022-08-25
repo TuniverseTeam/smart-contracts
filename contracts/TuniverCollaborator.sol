@@ -18,7 +18,7 @@ contract TuniverCollaborator is EIP712, AccessControl {
         _;
     }
 
-    ITuniverBox public boxContract = ITuniverBox(0xaC150715e398C649e507f15e2c1500E91f48dabe);
+    ITuniverBox public boxContract = ITuniverBox(0x8A395a4332987a7818C8086B33bE38e4f30555c9);
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");

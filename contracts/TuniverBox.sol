@@ -2,14 +2,14 @@
 
 pragma solidity ^0.8.7;
 
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721BurnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 
-contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
-    using SafeMath for uint256;
+contract TuniverBox is ERC721EnumerableUpgradeable, ERC721BurnableUpgradeable, ReentrancyGuardUpgradeable, OwnableUpgradeable {
+    using SafeMathUpgradeable for uint256;
 
     event CollectionUpdated(uint256 collectionId, bool isSupported);
     event BoxCreated(uint256 boxId, uint256 collectionId, address owner);
@@ -39,7 +39,9 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
     bool public paused;
     string private _uri;
 
-    constructor(string memory baseURI) ERC721("TuniverBox", "TNB") {
+    function initialize(string memory baseURI) public initializer {
+        __ERC721_init("TuniverBox", "TNB");
+        __Ownable_init();
         _uri = baseURI;
         collections.push(false); //ignore id 0
     }
@@ -98,9 +100,10 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
         address from,
         address to,
         uint256 tokenId
-    ) internal override {
+    ) internal override(ERC721Upgradeable, ERC721EnumerableUpgradeable) {
         require(!paused, "paused");
         require(!blacklist[tokenId], "blacklisted");
+        super._beforeTokenTransfer(from, to, tokenId);
     }
 
     function totalSupply() public view override returns (uint256) {
@@ -139,5 +142,9 @@ contract TuniverBox is ERC721Enumerable, ReentrancyGuard, Ownable {
             emit BoxOpened(id, _boxes[id]);
         }
        
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721Upgradeable, ERC721EnumerableUpgradeable) returns (bool) {
+        return interfaceId == type(IERC721EnumerableUpgradeable).interfaceId || super.supportsInterface(interfaceId);
     }
 }
