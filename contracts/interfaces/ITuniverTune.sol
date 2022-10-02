@@ -26,7 +26,7 @@ interface ITuniverTune {
     /**
      * @notice claim tuniver.
      */
-    function claim(
+    function mintFor(
         address account,
         uint256[] memory tuneIds,
         uint16[] memory amount

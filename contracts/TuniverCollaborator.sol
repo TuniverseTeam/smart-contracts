@@ -18,13 +18,13 @@ contract TuniverCollaborator is EIP712, AccessControl {
         _;
     }
 
-    ITuniverBox public boxContract = ITuniverBox(0x8A395a4332987a7818C8086B33bE38e4f30555c9);
+    ITuniverBox public boxContract = ITuniverBox(0xF1dbEddA8885292A9cafeaeC9A14ede53828A445);
 
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
     bytes32 public constant CONTROLLER_ROLE = keccak256("CONTROLLER_ROLE");
     string private constant SIGNING_DOMAIN = "LazyCollaborator-Tuniver";
     string private constant SIGNATURE_VERSION = "1";
-    address public receiver = 0x3c9509eD368D0Be3066E9b905Be7D1D0b6844701;
+    address public receiver;
     bool public paused;
 
     struct Buyer {
@@ -38,9 +38,11 @@ contract TuniverCollaborator is EIP712, AccessControl {
     constructor() EIP712(SIGNING_DOMAIN, SIGNATURE_VERSION) {
         _setupRole(
             DEFAULT_ADMIN_ROLE,
-            msg.sender
+            0x87D5Af2F2DFf06d79e7Ab26d9eC0335a5e5dAE9F
         );
-        _setupRole(SERVER_ROLE, 0xD93C0D33f84eABB8222E0705AE7e3bcdff9BEEbb);
+        _setupRole(CONTROLLER_ROLE, msg.sender);
+        _setupRole(SERVER_ROLE, 0xFFF781b942C19a62683E8A595528e332f684c36A);
+        receiver = 0x87D5Af2F2DFf06d79e7Ab26d9eC0335a5e5dAE9F;
     }
 
     function togglePause() external onlyRole(CONTROLLER_ROLE) {

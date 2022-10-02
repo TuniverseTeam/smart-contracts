@@ -25,7 +25,7 @@ contract TuniverTune is
 
     Tune[] private _tunes;
 
-    uint256 public amountTunePerTunipass = 2;
+    uint256 public amountTunePerTunipass = 1;
 
     function initialize(string memory _uri) public initializer {
         __ERC1155_init(_uri);
@@ -69,17 +69,17 @@ contract TuniverTune is
         tune.maxMint = maxMint;
     }
 
-    function claim(
+    function mintFor(
         address account,
         uint256[] memory tuneIds,
         uint16[] memory amount
     ) external override onlyRole(MINTER_ROLE) {
         for (uint256 i = 0; i < tuneIds.length; i++) {
-            _claim(account, tuneIds[i], amount[i]);
+            _mintFor(account, tuneIds[i], amount[i]);
         }
     }
 
-    function _claim(
+    function _mintFor(
         address account,
         uint256 tuneId,
         uint16 amount
@@ -98,15 +98,21 @@ contract TuniverTune is
     function swapTunipass(
         uint256 tuneId,
         uint256 amount,
-        uint256 collectionId
+        uint256 artistId
     ) external override {
         uint256 totalTunipass = amount.div(amountTunePerTunipass);
         uint256 remainderTune = amount.mod(amountTunePerTunipass);
         _burn(msg.sender, tuneId, amount.sub(remainderTune));
 
         for (uint256 i = 0; i < totalTunipass; i++) {
-            tunipassContract.createTunipass(collectionId, msg.sender);
+            tunipassContract.createTunipass(artistId, msg.sender);
         }
+    }
+
+    function levelUpTunipass(uint256 tuneId, uint256 tunipassId) external {
+        uint256 requireTune = tunipassContract.getRequireTuneForNextLevel(tunipassId);
+        _burn(msg.sender, tuneId, requireTune);
+        tunipassContract.levelUp(tunipassId);
     }
 
     function putTunesIntoStorage(address account, uint256[] memory tuneIds)

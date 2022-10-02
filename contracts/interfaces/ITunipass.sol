@@ -7,7 +7,6 @@ interface ITunipass {
     event AddTunipassToBlacklist(uint256 tunipassId);
     event ArtistInfo(
         uint256 artistId,
-        address _artist,
         uint256 maxSupply,
         uint256[] multiplied
     );
@@ -15,9 +14,8 @@ interface ITunipass {
     event RemoveTunipassFromBlacklist(uint256 tunipassId);
 
     struct Artist {
-        address _artist;
-        uint256 maxSupply;
-        uint256[] multiplied; // mul by level require length === max level
+        uint256 supply;
+        uint256[] levels; // contain require tune to upgrade level
         uint256 minted;
     }
 
@@ -44,11 +42,16 @@ interface ITunipass {
         external
         view
         returns (bool);
+    
+    function getRequireTuneForNextLevel(uint256 tunipassId) external view returns(uint256);
 
     /**
      * @notice add tunipassId to blacklist.
      */
     function addTunipassToBlacklist(uint256 tunipassId) external;
+
+
+    function levelUp(uint256 tunipassId) external;
 
     /**
      * @notice remove tunipassId to blacklist.
@@ -61,7 +64,7 @@ interface ITunipass {
      * @dev Function take 2 arguments.
      *
      */
-    function createTunipass(uint256 collectionId, address buyer) external;
+    function createTunipass(uint256 artistId, address buyer) external;
 
     /**
      * @notice paused function.

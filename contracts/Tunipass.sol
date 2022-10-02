@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "./interfaces/ITunipass.sol";
-import "./interfaces/ITuniver.sol";
+import "./interfaces/ITuniverRoyalTune.sol";
 
 contract Tunipass is
     ITunipass,
@@ -16,8 +16,6 @@ contract Tunipass is
     ReentrancyGuard
 {
     using SafeMath for uint256;
-
-    ITuniver public tuniverContract;
 
     Artist[] private _artists;
     Tunipass[] private _tunipasses;
@@ -44,12 +42,7 @@ contract Tunipass is
         _artists.push(_artist);
         uint256 artistId = _artists.length - 1;
 
-        emit ArtistInfo(
-            artistId,
-            _artist._artist,
-            _artist.maxSupply,
-            _artist.multiplied
-        );
+        emit ArtistInfo(artistId, _artist.supply, _artist.levels);
     }
 
     function updateArtist(uint256 artistId, Artist memory _artist)
@@ -57,15 +50,13 @@ contract Tunipass is
         onlyRole(CONTROLLER_ROLE)
     {
         Artist storage artist = _artists[artistId];
-        artist._artist = _artist._artist;
-        artist.multiplied = _artist.multiplied;
-        artist.maxSupply = _artist.maxSupply;
+        artist.levels = _artist.levels;
+        artist.supply = _artist.supply;
 
         emit ArtistInfo(
             artistId,
-            _artist._artist,
-            _artist.maxSupply,
-            _artist.multiplied
+            _artist.supply,
+            _artist.levels
         );
     }
 
@@ -122,19 +113,29 @@ contract Tunipass is
         tunipass = _tunipasses[tunipassId];
     }
 
+    function getRequireTuneForNextLevel(uint256 tunipassId) external override view returns(uint256)  {
+        Tunipass memory tunipass = _tunipasses[tunipassId];
+        uint256 artistId = tunipass.artistId;
+        uint256 currentLevel = tunipass.level - 1;
+        Artist memory _artist = _artists[artistId];
+        uint256 requiredTune = _artist.levels[currentLevel];
+        return requiredTune;
+    }
+
+
     function _baseURI() internal view override returns (string memory) {
         return _uri;
     }
 
-    function levelUp(uint256 tunipassId, uint256 amount)
+    function levelUp(uint256 tunipassId)
         external
         onlyRole(OPERATOR_ROLE)
     {
         Tunipass storage tunipass = _tunipasses[tunipassId];
         Artist memory artist = _artists[tunipass.artistId];
-        uint256 level = tunipass.level.add(amount);
+        uint256 level = tunipass.level.add(1);
 
-        require(level < artist.multiplied.length, "exceeded level");
+        require(level <= artist.levels.length, "exceeded level");
 
         tunipass.level = level;
 
@@ -157,13 +158,13 @@ contract Tunipass is
         Artist storage artist = _artists[artistId];
 
         require(
-            artist.minted.add(1) <= artist.maxSupply && artist.maxSupply > 0,
+            artist.minted.add(1) <= artist.supply && artist.supply > 0,
             "exceeded"
         );
 
         artist.minted = artist.minted.add(1);
 
-        _tunipasses.push(Tunipass(artistId, 0, 0));
+        _tunipasses.push(Tunipass(artistId, 1, 0));
         tunipassId = _tunipasses.length - 1;
 
         emit TunipassCreated(tunipassId, artistId);

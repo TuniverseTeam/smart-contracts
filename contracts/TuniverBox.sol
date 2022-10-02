@@ -106,10 +106,6 @@ contract TuniverBox is ERC721EnumerableUpgradeable, ERC721BurnableUpgradeable, R
         super._beforeTokenTransfer(from, to, tokenId);
     }
 
-    function totalSupply() public view override returns (uint256) {
-        return _boxes.length - 1;
-    }
-
     function buy(uint256 amount, address buyer, uint256 collectionId)
         external
         nonReentrant

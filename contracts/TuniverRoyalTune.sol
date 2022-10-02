@@ -6,17 +6,17 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./interfaces/ITuniver.sol";
+import "./interfaces/ITuniverRoyalTune.sol";
 
 contract TuniverRoyalTune is
-    ITuniver,
+    ITuniverRoyalTune,
     AccessControl,
     ERC721Enumerable,
     ReentrancyGuard
 {
     using SafeMath for uint256;
 
-    Tuniver[] private _tunivers; // contain collection ID and royaltyID
+    uint256[] private _royalTunes; // contain collection ID
     Collection[] private _collections;
 
     bool public paused;
@@ -31,65 +31,52 @@ contract TuniverRoyalTune is
 
     constructor(string memory baseURI) ERC721("Tuniver RoyalTune", "TRT") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _createTuniver(0, 0); // ignore tuniver with id = 0
+        _collections.push(
+            Collection(0, 0)
+        ); // ignore tuniver with id = 0
+        _royalTunes.push(0); // ignore royaltune id = 0;
         _uri = baseURI;
     }
 
-    function addTuniverToBlacklist(uint256 tuniverId)
+    function addRoyalTuneToBlacklist(uint256 royalTuneId)
         external
         onlyRole(CONTROLLER_ROLE)
     {
-        require(tuniverId < _tunivers.length, "TNV: invalid");
-        blacklist[tuniverId] = true;
+        require(royalTuneId < _royalTunes.length, "TNV: invalid");
+        blacklist[royalTuneId] = true;
     }
 
-    function removeTuniverFromBlacklist(uint256 tuniverId)
+    function removeRoyalTuneFromBlacklist(uint256 royalTuneId)
         external
         onlyRole(CONTROLLER_ROLE)
     {
-        require(tuniverId < _tunivers.length);
-        blacklist[tuniverId] = false;
+        require(royalTuneId < _royalTunes.length);
+        blacklist[royalTuneId] = false;
     }
 
     function addCollection(
-        string memory artistName,
-        address artist,
-        uint256[] memory royalty,
         uint256 maxSupply
     ) external onlyRole(CONTROLLER_ROLE) {
-        require(artist != address(0) && maxSupply != 0);
         _collections.push(
-            Collection(artistName, artist, royalty, maxSupply, 0)
+            Collection(maxSupply, 0)
         );
         uint256 collectionId = _collections.length.sub(1);
 
         emit CollectionCreated(
             collectionId,
-            artistName,
-            artist,
-            royalty,
             maxSupply
         );
     }
 
     function updateCollection(
         uint256 collectionId,
-        string memory artistName,
-        address artist,
-        uint256[] memory royalty,
         uint256 maxSupply
     ) external onlyRole(CONTROLLER_ROLE) {
         Collection storage collection = _collections[collectionId];
-        collection.artistName = artistName;
-        collection.artist = artist;
-        collection.royalty = royalty;
         collection.maxSupply = maxSupply;
 
         emit CollectionUpdated(
             collectionId,
-            artistName,
-            artist,
-            royalty,
             maxSupply
         );
     }
@@ -105,33 +92,21 @@ contract TuniverRoyalTune is
         _uri = baseURI;
     }
 
-    function getTuniverInBlacklist(uint256 tuniverId)
+    function getRoyalTuneInBlacklist(uint256 royalTuneId)
         external
         view
         returns (bool)
     {
-        return blacklist[tuniverId];
+        return blacklist[royalTuneId];
     }
 
-    function getTuniverCollectionId(uint256 tuniverId)
-        external
-        view
-        returns (Tuniver memory tuniver)
-    {
-        tuniver = _tunivers[tuniverId];
-    }
-
-    function getTuniver(uint256 tuniverId)
+    function getRoyalTuneCollectionId(uint256 royalTuneId)
         external
         view
         override
-        returns (uint256 royaltyShare, address artist)
+        returns (uint256 collectionId)
     {
-        Tuniver memory tuniver = _tunivers[tuniverId];
-        Collection memory collection = _collections[tuniver.collectionId];
-
-        royaltyShare = collection.royalty[tuniver.royaltyId];
-        artist = collection.artist;
+        collectionId = _royalTunes[royalTuneId];
     }
 
     function getCollection(uint256 collectionId)
@@ -147,14 +122,14 @@ contract TuniverRoyalTune is
         return _uri;
     }
 
-    function _createTuniver(uint256 collectionId, uint256 royaltyId)
+    function _createRoyalTune(uint256 collectionId)
         private
-        returns (uint256 tuniverId)
+        returns (uint256 royalTuneId)
     {
-        _tunivers.push(Tuniver(collectionId, royaltyId));
-        tuniverId = _tunivers.length - 1;
+        _royalTunes.push(collectionId);
+        royalTuneId = _royalTunes.length - 1;
 
-        emit TuniverCreated(collectionId, royaltyId);
+        emit RoyalTuneCreated(collectionId);
     }
 
     function _beforeTokenTransfer(
@@ -163,7 +138,7 @@ contract TuniverRoyalTune is
         uint256 tokenId
     ) internal override {
         require(!paused, "TNV: paused");
-        require(!blacklist[tokenId], "TNV: tuniverId blacklisted");
+        require(!blacklist[tokenId], "TNV: royalTuneId blacklisted");
     }
 
     function safeBatchTransfer(
@@ -177,21 +152,19 @@ contract TuniverRoyalTune is
     }
 
     function totalSupply() public view override returns (uint256) {
-        return _tunivers.length - 1;
+        return _royalTunes.length - 1;
     }
 
-    function mintFor(Tuniver[] memory tunivers, address buyer)
+    function mintFor(uint256[] memory royalTunes, address buyer)
         external
         nonReentrant
         onlyRole(SERVER_ROLE)
     {
-        require(tunivers.length != 0, "TNV: invalid");
-        for (uint256 i = 0; i < tunivers.length; i++) {
-            Collection storage collection = _collections[
-                tunivers[i].collectionId
-            ];
+        require(royalTunes.length != 0, "TNV: invalid");
+        for (uint256 i = 0; i < royalTunes.length; i++) {
+            Collection storage collection = _collections[royalTunes[i]];
             require(
-                collection.artist != address(0),
+                collection.maxSupply != 0,
                 "TNV: collection not supported"
             );
             require(
@@ -200,11 +173,8 @@ contract TuniverRoyalTune is
                 "exceeded"
             ); // check mint exceeded limit nfts per collection
 
-            uint256 tuniverId = _createTuniver(
-                tunivers[i].collectionId,
-                tunivers[i].royaltyId
-            );
-            _safeMint(buyer, tuniverId);
+            uint256 royalTuneId = _createRoyalTune(royalTunes[i]);
+            _safeMint(buyer, royalTuneId);
             collection.minted = collection.minted.add(1); // increase minted nft on collection
         }
     }
