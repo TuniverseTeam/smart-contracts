@@ -3,7 +3,7 @@
 pragma solidity ^0.8.7;
 
 interface ITuniverRoyalTune {
-    event RoyalTuneCreated(uint256 collectionId);
+    event RoyalTuneCreated(uint256 collectionId, uint256 boxId);
     event CollectionCreated(
         uint256 collectionId,
         uint256 maxSupply
