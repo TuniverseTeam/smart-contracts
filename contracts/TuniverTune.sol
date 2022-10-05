@@ -24,6 +24,7 @@ contract TuniverTune is
     ITunipass private tunipassContract;
 
     Tune[] private _tunes;
+    mapping(uint256 => bool) public mintFrom;
 
     uint256 public amountTunePerTunipass = 1;
 
@@ -72,23 +73,27 @@ contract TuniverTune is
     function mintFor(
         address account,
         uint256[] memory tuneIds,
-        uint16[] memory amount
+        uint16[] memory amount,
+        uint256[] memory boxIds
     ) external override onlyRole(MINTER_ROLE) {
         for (uint256 i = 0; i < tuneIds.length; i++) {
-            _mintFor(account, tuneIds[i], amount[i]);
+            _mintFor(account, tuneIds[i], amount[i], boxIds[i]);
         }
     }
 
     function _mintFor(
         address account,
         uint256 tuneId,
-        uint16 amount
+        uint16 amount,
+        uint256 boxId
     ) private {
         Tune storage tune = _tunes[tuneId];
 
         require(tune.maxMint >= tune.minted.add(amount), "cannot be exceeded");
+        require(mintFrom[boxId] != true, "Tunibox already minted");
 
         _balances[tuneId][account] += amount;
+        mintFrom[boxId] = true;
         tune.minted += amount;
 
         emit TransferSingle(msg.sender, address(0), account, tuneId, amount);
@@ -110,7 +115,9 @@ contract TuniverTune is
     }
 
     function levelUpTunipass(uint256 tuneId, uint256 tunipassId) external {
-        uint256 requireTune = tunipassContract.getRequireTuneForNextLevel(tunipassId);
+        uint256 requireTune = tunipassContract.getRequireTuneForNextLevel(
+            tunipassId
+        );
         _burn(msg.sender, tuneId, requireTune);
         tunipassContract.levelUp(tunipassId);
     }

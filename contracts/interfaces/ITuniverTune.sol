@@ -29,7 +29,8 @@ interface ITuniverTune {
     function mintFor(
         address account,
         uint256[] memory tuneIds,
-        uint16[] memory amount
+        uint16[] memory amount,
+        uint256[] memory boxIds
     ) external;
 
     /**
