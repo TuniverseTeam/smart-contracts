@@ -28,6 +28,7 @@ contract TuniverRoyalTune is
     bytes32 public constant SERVER_ROLE = keccak256("SERVER_ROLE");
 
     mapping(uint256 => bool) public blacklist;
+    mapping(uint256 => bool) public mintFrom;
 
     constructor(string memory baseURI) ERC721("Tuniver RoyalTune", "TRT") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
@@ -122,14 +123,15 @@ contract TuniverRoyalTune is
         return _uri;
     }
 
-    function _createRoyalTune(uint256 collectionId)
+    function _createRoyalTune(uint256 collectionId, uint256 boxId)
         private
         returns (uint256 royalTuneId)
     {
+        require(mintFrom[boxId] != true, "Tunibox already minted");
         _royalTunes.push(collectionId);
         royalTuneId = _royalTunes.length - 1;
 
-        emit RoyalTuneCreated(collectionId);
+        emit RoyalTuneCreated(collectionId, boxId);
     }
 
     function _beforeTokenTransfer(
@@ -155,7 +157,7 @@ contract TuniverRoyalTune is
         return _royalTunes.length - 1;
     }
 
-    function mintFor(uint256[] memory royalTunes, address buyer)
+    function mintFor(uint256[] memory royalTunes, uint256[] memory boxIds, address buyer)
         external
         nonReentrant
         onlyRole(SERVER_ROLE)
@@ -173,7 +175,7 @@ contract TuniverRoyalTune is
                 "exceeded"
             ); // check mint exceeded limit nfts per collection
 
-            uint256 royalTuneId = _createRoyalTune(royalTunes[i]);
+            uint256 royalTuneId = _createRoyalTune(royalTunes[i], boxIds[i]);
             _safeMint(buyer, royalTuneId);
             collection.minted = collection.minted.add(1); // increase minted nft on collection
         }
